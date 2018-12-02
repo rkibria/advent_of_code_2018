@@ -25,7 +25,7 @@ int main( int argc, char* argv[] )
 			for( const char c : line )
 			{
 				const unsigned int index = c - 'a';
-				assert( index <= 26 );
+				assert( index < 26 );
 				++counts[ index ];
 			}
 
