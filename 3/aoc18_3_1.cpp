@@ -9,7 +9,18 @@ using namespace std;
 struct Claim
 {
 	unsigned int x, y, w, h;
+
+	bool contains_square( unsigned int sx, unsigned int sy ) const
+	{
+		return sx >= x && sx < x + w && sy >= y && sy < y + h;
+	}
 };
+
+ostream& operator<<( ostream& os, const Claim& c )
+{
+	os << "(" << c.x << ", " << c.y << " : " << c.w << "x" << c.h << ")";
+	return os;
+}
 
 int main( int argc, char* argv[] )
 {
@@ -59,6 +70,28 @@ int main( int argc, char* argv[] )
 		file.close();
 		cout << "claims: " << claims.size() << endl;
 
+		unsigned int in_more_than_one_claims = 0;
+		for( unsigned int sy = 0; sy < 1000; ++sy )
+		{
+			for( unsigned int sx = 0; sx < 1000; ++sx )
+			{
+				unsigned int num_contains = 0;
+				for( const auto& cl : claims )
+				{
+					const auto hit = cl.contains_square( sx, sy );
+					if( hit )
+					{
+						++num_contains;
+						if( num_contains > 1 )
+						{
+							++in_more_than_one_claims;
+							break;
+						}
+					}
+				}
+			}
+		}
+		cout << "squares in more than one claim: " << in_more_than_one_claims << endl;
 	}
 	else
 	{
