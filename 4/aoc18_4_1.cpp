@@ -5,6 +5,7 @@
 #include <cassert>
 #include <sstream>
 #include <memory>
+#include <algorithm>
 using namespace std;
 
 enum class GuardState { begin, sleep, wake };
@@ -26,12 +27,22 @@ struct Record
 	unsigned int month, day, hour, minute, guard;
 	GuardState state;
 	string event;
+
+	auto minutes_elapsed() const
+	{
+		return month * ( 31 * 24 * 60) + day * ( 24 * 60 ) + hour * 60 + minute;
+	}
 };
 
 ostream& operator<<( ostream& os, const Record& r )
 {
 	os << "(1518-" << r.month << "-" << r.day << " " << r.hour << ":" << r.minute << " - guard " << r.guard << " " << r.state <<  ")";
 	return os;
+}
+
+bool cmp_record( const std::unique_ptr<Record> &a, const std::unique_ptr< Record > &b )
+{
+	return a->minutes_elapsed() < b->minutes_elapsed();
 }
 
 int main( int argc, char* argv[] )
@@ -99,6 +110,13 @@ int main( int argc, char* argv[] )
 		}
 		file.close();
 		cout << "records: " << records.size() << endl;
+
+		sort( records.begin(), records.end(), cmp_record );
+
+		for( const auto& rec : records )
+		{
+			cout << *rec << endl;
+		}
 	}
 	else
 	{
