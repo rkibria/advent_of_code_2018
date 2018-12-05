@@ -6,6 +6,8 @@
 #include <sstream>
 #include <memory>
 #include <algorithm>
+#include <unordered_map>
+#include <array>
 using namespace std;
 
 enum class GuardState { begin, sleep, wake };
@@ -30,7 +32,7 @@ struct Record
 
 	auto minutes_elapsed() const
 	{
-		return month * ( 31 * 24 * 60) + day * ( 24 * 60 ) + hour * 60 + minute;
+		return month * ( 31 * 24 * 60 ) + day * ( 24 * 60 ) + hour * 60 + minute;
 	}
 };
 
@@ -113,10 +115,42 @@ int main( int argc, char* argv[] )
 
 		sort( records.begin(), records.end(), cmp_record );
 
+		using MinuteArray = array< unsigned int, 60 >;
+		unordered_map< unsigned int, MinuteArray > sleep_counts;
+		unsigned int current_guard = 0;
+		unsigned int fell_asleep_minute = 0;
 		for( const auto& rec : records )
 		{
+			switch( rec->state )
+			{
+				case GuardState::begin :
+					current_guard = rec->guard;
+					if( sleep_counts.find( current_guard ) == sleep_counts.end() )
+					{
+						sleep_counts[ current_guard ] = MinuteArray();
+					}
+					break;
+
+				case GuardState::sleep :
+					fell_asleep_minute = rec->minute;
+					break;
+
+				case GuardState::wake :
+					{
+						auto& counts = sleep_counts[ current_guard ];
+						for( auto i = fell_asleep_minute; i < rec->minute; ++i )
+						{
+							++counts[ i ];
+						}
+					}
+					break;
+
+				default: break;
+			}
+
 			cout << *rec << endl;
 		}
+		cout << "guard sleep counts: " << sleep_counts.size() << endl;
 	}
 	else
 	{
