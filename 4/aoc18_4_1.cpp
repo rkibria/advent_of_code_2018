@@ -176,6 +176,22 @@ int main( int argc, char* argv[] )
 			cout << endl;
 		}
 		cout << "guard most asleep is " << guard_most_asleep << " for " << max_sleep_minutes << " minutes" << endl;
+
+		unsigned int sleepiest_minute = 0;
+		unsigned int max_sleep = 0;
+		const auto& sleepiest_guard_counts = sleep_counts[ guard_most_asleep ];
+		for( size_t i = 0; i < sleepiest_guard_counts.size() ; ++i )
+		{
+			const auto current_sleep = sleepiest_guard_counts[ i ];
+			if( current_sleep > max_sleep )
+			{
+				max_sleep = current_sleep;
+				sleepiest_minute = i;
+			}
+		}
+		cout << "sleepiest minute is " << sleepiest_minute << endl;
+
+		cout << "result guard id * minute = " << ( guard_most_asleep * sleepiest_minute ) << endl;
 	}
 	else
 	{
