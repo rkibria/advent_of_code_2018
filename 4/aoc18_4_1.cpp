@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <unordered_map>
 #include <array>
+#include <numeric>
 using namespace std;
 
 enum class GuardState { begin, sleep, wake };
@@ -137,6 +138,7 @@ int main( int argc, char* argv[] )
 
 				case GuardState::wake :
 					{
+						assert( fell_asleep_minute < rec->minute );
 						auto& counts = sleep_counts[ current_guard ];
 						for( auto i = fell_asleep_minute; i < rec->minute; ++i )
 						{
@@ -151,6 +153,29 @@ int main( int argc, char* argv[] )
 			cout << *rec << endl;
 		}
 		cout << "guard sleep counts: " << sleep_counts.size() << endl;
+
+		unsigned int guard_most_asleep = 0;
+		unsigned int max_sleep_minutes = 0;
+		for( auto itr : sleep_counts )
+		{
+			const auto& current_guard = itr.first;
+			const auto& current_sleep_counts = itr.second;
+
+			cout << current_guard << ": ";
+			const unsigned int minutes_asleep = accumulate( current_sleep_counts.begin(), current_sleep_counts.end(), 0 );
+			if( minutes_asleep > max_sleep_minutes )
+			{
+				max_sleep_minutes = minutes_asleep;
+				guard_most_asleep = current_guard;
+			}
+
+			for( auto i : itr.second )
+			{
+				cout << i << " ";
+			}
+			cout << endl;
+		}
+		cout << "guard most asleep is " << guard_most_asleep << " for " << max_sleep_minutes << " minutes" << endl;
 	}
 	else
 	{
