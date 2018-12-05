@@ -149,8 +149,6 @@ int main( int argc, char* argv[] )
 
 				default: break;
 			}
-
-			cout << *rec << endl;
 		}
 		cout << "guard sleep counts: " << sleep_counts.size() << endl;
 
@@ -161,19 +159,12 @@ int main( int argc, char* argv[] )
 			const auto& current_guard = itr.first;
 			const auto& current_sleep_counts = itr.second;
 
-			cout << current_guard << ": ";
 			const unsigned int minutes_asleep = accumulate( current_sleep_counts.begin(), current_sleep_counts.end(), 0 );
 			if( minutes_asleep > max_sleep_minutes )
 			{
 				max_sleep_minutes = minutes_asleep;
 				guard_most_asleep = current_guard;
 			}
-
-			for( auto i : itr.second )
-			{
-				cout << i << " ";
-			}
-			cout << endl;
 		}
 		cout << "guard most asleep is " << guard_most_asleep << " for " << max_sleep_minutes << " minutes" << endl;
 
@@ -189,7 +180,7 @@ int main( int argc, char* argv[] )
 				sleepiest_minute = i;
 			}
 		}
-		cout << "sleepiest minute is " << sleepiest_minute << endl;
+		cout << "most asleep's sleepiest minute is " << sleepiest_minute << endl;
 
 		cout << "result guard id * minute = " << ( guard_most_asleep * sleepiest_minute ) << endl;
 	}
