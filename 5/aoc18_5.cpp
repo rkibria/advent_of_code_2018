@@ -1,15 +1,9 @@
 #include <cstddef>
 #include <iostream>
 #include <fstream>
-#include <vector>
+#include <ctype.h>
 #include <string>
 #include <cassert>
-#include <sstream>
-#include <memory>
-#include <algorithm>
-#include <unordered_map>
-#include <array>
-#include <numeric>
 using namespace std;
 
 int main( int argc, char* argv[] )
@@ -34,6 +28,51 @@ int main( int argc, char* argv[] )
 	}
 
 	cout << "polymer length: " << polymer.size() << endl;
+
+	string result;
+	result.reserve( polymer.size() );
+
+	bool done = false;
+	while( !done )
+	{
+		size_t i = 0;
+		while( i < polymer.size() )
+		{
+			const auto c = polymer[ i ];
+
+			if( i < polymer.size() - 1 )
+			{
+				const auto next_c = polymer[ i + 1 ];
+
+				if( tolower( c ) == tolower( next_c ) && c != next_c )
+				{
+					i += 2;
+				}
+				else
+				{
+					result.push_back( c );
+					++i;
+				}
+			}
+			else
+			{
+				result.push_back( c );
+				++i;
+			}
+		}
+
+		if( result.size() == polymer.size() )
+		{
+			done = true;
+		}
+		else
+		{
+			polymer = result;
+			result.clear();
+			cout << "reacting..." << endl;
+		}
+	}
+	cout << "1) polymer length after reaction: " << result.size() << endl;
 
 	return 0;
 }
