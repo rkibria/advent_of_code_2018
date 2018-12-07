@@ -1,3 +1,4 @@
+#include <cstddef>
 #include <iostream>
 #include <fstream>
 #include <vector>
@@ -27,7 +28,7 @@ ostream& operator<<( ostream& os, const GuardState& s )
 
 struct Record
 {
-	unsigned int month, day, hour, minute, guard;
+	size_t month, day, hour, minute, guard;
 	GuardState state;
 	string event;
 
@@ -116,10 +117,10 @@ int main( int argc, char* argv[] )
 
 		sort( records.begin(), records.end(), cmp_record );
 
-		using MinuteArray = array< unsigned int, 60 >;
-		unordered_map< unsigned int, MinuteArray > sleep_counts;
-		unsigned int current_guard = 0;
-		unsigned int fell_asleep_minute = 0;
+		using MinuteArray = array< size_t, 60 >;
+		unordered_map< size_t, MinuteArray > sleep_counts;
+		size_t current_guard = 0;
+		size_t fell_asleep_minute = 0;
 		for( const auto& rec : records )
 		{
 			switch( rec->state )
@@ -152,14 +153,15 @@ int main( int argc, char* argv[] )
 		}
 		cout << "guard sleep counts: " << sleep_counts.size() << endl;
 
-		unsigned int guard_most_asleep = 0;
-		unsigned int max_sleep_minutes = 0;
+		/* PART 1 */
+		size_t guard_most_asleep = 0;
+		size_t max_sleep_minutes = 0;
 		for( auto itr : sleep_counts )
 		{
 			const auto& current_guard = itr.first;
 			const auto& current_sleep_counts = itr.second;
 
-			const unsigned int minutes_asleep = accumulate( current_sleep_counts.begin(), current_sleep_counts.end(), 0 );
+			const size_t minutes_asleep = accumulate( current_sleep_counts.begin(), current_sleep_counts.end(), 0 );
 			if( minutes_asleep > max_sleep_minutes )
 			{
 				max_sleep_minutes = minutes_asleep;
@@ -168,8 +170,8 @@ int main( int argc, char* argv[] )
 		}
 		cout << "guard most asleep is " << guard_most_asleep << " for " << max_sleep_minutes << " minutes" << endl;
 
-		unsigned int sleepiest_minute = 0;
-		unsigned int max_sleep = 0;
+		size_t sleepiest_minute = 0;
+		size_t max_sleep = 0;
 		const auto& sleepiest_guard_counts = sleep_counts[ guard_most_asleep ];
 		for( size_t i = 0; i < sleepiest_guard_counts.size() ; ++i )
 		{
@@ -181,8 +183,9 @@ int main( int argc, char* argv[] )
 			}
 		}
 		cout << "most asleep's sleepiest minute is " << sleepiest_minute << endl;
+		cout << "1) result guard id * minute = " << ( guard_most_asleep * sleepiest_minute ) << endl;
 
-		cout << "result guard id * minute = " << ( guard_most_asleep * sleepiest_minute ) << endl;
+		size_t x;
 	}
 	else
 	{
