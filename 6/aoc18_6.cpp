@@ -65,8 +65,6 @@ int main( int argc, char* argv[] )
 
 	const auto area_width = static_cast< size_t >( up_bnd.x - low_bnd.x ) + 1;
 	const auto area_height = static_cast< size_t >( up_bnd.y - low_bnd.y ) + 1;
-	cout << "area bounds: " << low_bnd.x << "," << low_bnd.y << " -> " << up_bnd.x << "," << up_bnd.y
-		<< " (" << area_width << " X " << area_height << ")" << endl;
 
 	using AreaRow = vector< int >;
 	vector< AreaRow > area;
@@ -98,27 +96,37 @@ int main( int argc, char* argv[] )
 		}
 	}
 
-	cout << "\t";
-	for( size_t j = 0; j < area[0].size(); ++j )
+	vector< int > area_counts( coords.size() );
+	const int InfiniteCount = -1;
+
+	for( size_t y = 0; y < area.size(); ++y )
 	{
-		const int x = static_cast< int >( j ) + low_bnd.x - 1;
-		cout << x << " ";
+		const auto& row = area[ y ];
+		const int left_nearest = row.front();
+		if( left_nearest >= 0 )
+			area_counts[ left_nearest ] = InfiniteCount;
+		const int right_nearest = row.back();
+		if( right_nearest >= 0 )
+			area_counts[ right_nearest ] = InfiniteCount;
 	}
-	cout << endl;
-	for( size_t i = 0; i < area.size(); ++i )
+
+	for( size_t x = 1; x < area[ 0 ].size() - 1; ++x )
 	{
-		const int y = static_cast< int >( i ) + low_bnd.y - 1;
-		cout << y << "\t";
-		const auto& row = area[ i ];
-		for( size_t j = 0; j < row.size(); ++j )
-		{
-			if( row[ j ] == -1 )
-				cout << ". ";
-			else
-				cout << row[ j ] << " ";
-		}
-		cout << endl;
+		const int top_nearest = area.front()[ x ];
+		if( top_nearest >= 0 )
+			area_counts[ top_nearest ] = InfiniteCount;
+		const int bottom_nearest = area.back()[ x ];
+		if( bottom_nearest >= 0 )
+			area_counts[ bottom_nearest ] = InfiniteCount;
 	}
+
+	for( const auto& row : area )
+		for( const auto nearest : row )
+			if( nearest > 0 && area_counts[ nearest ] != InfiniteCount )
+				++area_counts[ nearest ];
+
+	const auto highest_area = max_element( area_counts.begin(), area_counts.end() );
+	cout << "1) highest non infinite area is " << *highest_area << endl;
 
 	return 0;
 }
