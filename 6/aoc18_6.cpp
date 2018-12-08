@@ -66,6 +66,7 @@ int main( int argc, char* argv[] )
 	const auto area_width = static_cast< size_t >( up_bnd.x - low_bnd.x ) + 1;
 	const auto area_height = static_cast< size_t >( up_bnd.y - low_bnd.y ) + 1;
 
+	/* PART 1 */
 	using AreaRow = vector< int >;
 	vector< AreaRow > area;
 	for( size_t i = 0; i < area_height + 2; ++i )
@@ -127,6 +128,29 @@ int main( int argc, char* argv[] )
 
 	const auto highest_area = max_element( area_counts.begin(), area_counts.end() );
 	cout << "1) highest non infinite area is " << *highest_area << endl;
+
+	/* PART 2 */
+	const int distance_sum_limit = 10000; // test_input.txt: 32;
+	size_t safe_area_size = 0;
+	for( size_t i = 0; i < area_height + 2; ++i )
+	{
+		const int y = static_cast< int >( i ) + low_bnd.y - 1;
+		for( size_t j = 0; j < area_width + 2; ++j )
+		{
+			const int x = static_cast< int >( j ) + low_bnd.x - 1;
+			const Point p{ x, y };
+
+			int sum_distances = 0;
+			for( size_t k = 0; k < coords.size(); ++k )
+			{
+				sum_distances += manhattan( p, coords[ k ] );
+			}
+			if( sum_distances < distance_sum_limit )
+				++safe_area_size;
+
+		}
+	}
+	cout << "2) Size of safe area with limit " << distance_sum_limit << ": " << safe_area_size << endl;
 
 	return 0;
 }
