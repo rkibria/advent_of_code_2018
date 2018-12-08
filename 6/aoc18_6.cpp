@@ -73,6 +73,8 @@ int main( int argc, char* argv[] )
 	for( size_t i = 0; i < area_height + 2; ++i )
 		area.emplace_back( AreaRow( area_width + 2, -1 ) );
 
+	using DistanceCoordPair = pair< size_t, int >;
+	vector< DistanceCoordPair > distances( coords.size() );
 	for( size_t i = 0; i < area.size(); ++i )
 	{
 		const int y = static_cast< int >( i ) + low_bnd.y - 1;
@@ -81,35 +83,28 @@ int main( int argc, char* argv[] )
 		{
 			const int x = static_cast< int >( j ) + low_bnd.x - 1;
 			const Point p{ x, y };
-			int min_dist = numeric_limits< int >::max();
-			int min_coord = -1;
+
 			for( size_t k = 0; k < coords.size(); ++k )
 			{
-				const auto cur_coord = static_cast< int >( k );
-				const auto dist = manhattan( p, coords[ k ] );
-				if( dist == 0 )
-				{
-					min_coord = cur_coord;
-					break;
-				}
-				/*
-				if( dist == min_dist )
-				{
-					min_coord = -1;
-					break;
-				}
-				if( dist < min_dist )
-				{
-					min_dist = dist;
-					min_coord = cur_coord;
-				}
-				min_dist = min( dist, min_dist );
-				*/
+				distances[ k ] = DistanceCoordPair( manhattan( p, coords[ k ] ), k );
 			}
-			row[ j ] = min_coord;
+
+			sort( distances.begin(), distances.end() );
+
+			if( distances[ 0 ].first != distances[ 1 ].first )
+			{
+				row[ j ] = distances[ 0 ].second;
+			}
 		}
 	}
 
+	cout << "\t";
+	for( size_t j = 0; j < area[0].size(); ++j )
+	{
+		const int x = static_cast< int >( j ) + low_bnd.x - 1;
+		cout << x << " ";
+	}
+	cout << endl;
 	for( size_t i = 0; i < area.size(); ++i )
 	{
 		const int y = static_cast< int >( i ) + low_bnd.y - 1;
@@ -117,7 +112,10 @@ int main( int argc, char* argv[] )
 		const auto& row = area[ i ];
 		for( size_t j = 0; j < row.size(); ++j )
 		{
-			cout << row[ j ] << " ";
+			if( row[ j ] == -1 )
+				cout << ". ";
+			else
+				cout << row[ j ] << " ";
 		}
 		cout << endl;
 	}
