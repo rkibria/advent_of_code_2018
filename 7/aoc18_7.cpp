@@ -4,6 +4,7 @@
 #include <cassert>
 #include <vector>
 #include <sstream>
+#include <unordered_map>
 using namespace std;
 
 int main( int argc, char* argv[] )
@@ -14,7 +15,8 @@ int main( int argc, char* argv[] )
 		return -1;
 	}
 
-	using Instruction = pair< char, char >;
+	using NodeId = char;
+	using Instruction = pair< NodeId, NodeId >;
 	vector< Instruction > instructions;
 
 	ifstream file( argv[ 1 ] );
@@ -27,13 +29,13 @@ int main( int argc, char* argv[] )
 			ifs >> token;
 			assert( token == "Step" );
 
-			char step_1;
+			NodeId step_1;
 			ifs >> step_1;
 
 			for( int i = 0; i < 5; ++i )
 				ifs >> token;
 
-			char step_2;
+			NodeId step_2;
 			ifs >> step_2;
 
 			instructions.emplace_back( Instruction( step_1, step_2 ) );
@@ -47,6 +49,41 @@ int main( int argc, char* argv[] )
 	}
 
 	cout << "Instructions: " << instructions.size() << endl;
+
+	using AdjacencyElements = vector< NodeId >;
+	using AdjacencyList = unordered_map< NodeId, AdjacencyElements >;
+
+	auto initialize_entries = []( AdjacencyList& lst, NodeId src, NodeId dst ) {
+			if( lst.find( src ) == lst.end() )
+				lst[ src ] = AdjacencyElements();
+			if( lst.find( dst ) == lst.end() )
+				lst[ dst ] = AdjacencyElements();
+		};
+
+	AdjacencyList incoming, outgoing;
+	for( const auto& instr : instructions )
+	{
+		const auto src = instr.first;
+		const auto dst = instr.second;
+
+		initialize_entries( incoming, src, dst );
+		initialize_entries( outgoing, src, dst );
+
+		incoming[ dst ].emplace_back( src );
+		outgoing[ src ].emplace_back( dst );
+	}
+
+	for( auto itr : incoming )
+	{
+		if( itr.second.empty() )
+			cout << "start node " << itr.first << endl;
+	}
+
+	for( auto itr : outgoing )
+	{
+		if( itr.second.empty() )
+			cout << "end node " << itr.first << endl;
+	}
 
 	return 0;
 }
