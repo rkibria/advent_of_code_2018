@@ -5,6 +5,7 @@
 #include <vector>
 #include <sstream>
 #include <unordered_map>
+#include <algorithm>
 using namespace std;
 
 using StepId = char;
@@ -104,6 +105,9 @@ int main( int argc, char* argv[] )
 		outgoing[ src ].emplace_back( dst );
 	}
 
+	cout << "total steps: " << outgoing.size() << endl;
+
+	/*
 	StepId final_step{ 0 };
 	for( auto itr : outgoing )
 	{
@@ -117,6 +121,39 @@ int main( int argc, char* argv[] )
 	assert( final_step != 0 );
 
 	dfs( incoming, final_step, smp );
+	*/
+
+	using StepGroup = vector< StepId >;
+
+	auto steps_without_succesors = [ & ]() {
+			StepGroup group;
+			for( auto& itr : outgoing )
+			{
+				if( itr.second.empty() )
+				{
+					group.emplace_back( itr.first );
+				}
+			}
+			return group;
+		};
+
+	auto remove_step = [ & ]( StepId step ) {
+			outgoing.erase( step );
+			for( auto& itr : outgoing )
+			{
+				auto& v = itr.second;
+				v.erase( remove( v.begin(), v.end(), step ), v.end() );
+			}
+		};
+
+	while( outgoing.size() )
+	{
+		StepGroup group = steps_without_succesors();
+		for( auto s : group ) {cout << s << " ";} cout << endl;
+
+		for( const auto step : group )
+			remove_step( step );
+	}
 
 	return 0;
 }
