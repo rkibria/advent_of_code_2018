@@ -6,6 +6,7 @@
 #include <sstream>
 #include <unordered_map>
 #include <algorithm>
+#include <list>
 using namespace std;
 
 using StepId = char;
@@ -134,6 +135,7 @@ int main( int argc, char* argv[] )
 					group.emplace_back( itr.first );
 				}
 			}
+			sort( group.begin(), group.end() );
 			return group;
 		};
 
@@ -146,14 +148,22 @@ int main( int argc, char* argv[] )
 			}
 		};
 
+	list< StepGroup > sequence;
 	while( outgoing.size() )
 	{
 		StepGroup group = steps_without_succesors();
 		for( auto s : group ) {cout << s << " ";} cout << endl;
+		sequence.push_front( group );
 
 		for( const auto step : group )
 			remove_step( step );
 	}
+
+	cout << "1) order of steps: ";
+	for( auto& group : sequence )
+		for( auto step : group )
+			cout << step;
+	cout << endl;
 
 	return 0;
 }
