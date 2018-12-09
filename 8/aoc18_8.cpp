@@ -61,11 +61,11 @@ tuple< size_t, size_t > get_node_value( const InputVector& inputs, size_t start_
 	node_length += children_length;
 
 	size_t node_value = 0;
-	if( n_children > 0 )
+	for( size_t i = 0; i < n_metadata; ++i )
 	{
-		for( size_t i = 0; i < n_metadata; ++i )
+		const size_t meta_value = inputs[ start_index + 2 + children_length + i ];
+		if( n_children > 0 )
 		{
-			const size_t meta_value = inputs[ start_index + 2 + children_length + i ];
 			if( meta_value > 0 )
 			{
 				const size_t child_index = meta_value - 1;
@@ -73,12 +73,9 @@ tuple< size_t, size_t > get_node_value( const InputVector& inputs, size_t start_
 					node_value += child_values[ child_index ];
 			}
 		}
-	}
-	else
-	{
-		for( size_t i = 0; i < n_metadata; ++i )
+		else
 		{
-			node_value += inputs[ start_index + 2 + children_length + i ];
+			node_value += meta_value;
 		}
 	}
 
