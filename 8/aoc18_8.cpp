@@ -8,16 +8,12 @@ using namespace std;
 
 using InputVector = vector< size_t >;
 
-static size_t n_children_found = 0;
 static size_t metadata_sum = 0;
 
 size_t sum_all_metadata( const InputVector& inputs, size_t start_index )
 {
 	const size_t n_children = inputs[ start_index ];
 	const size_t n_metadata = inputs[ start_index + 1 ];
-
-	const size_t node_id = n_children_found;
-	++n_children_found;
 
 	size_t node_length = 2;
 	node_length += n_metadata;
