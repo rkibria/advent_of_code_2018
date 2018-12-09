@@ -94,13 +94,21 @@ int main( int argc, char* argv[] )
 			}
 		};
 
+	StepVector order;
 	while( incoming.size() )
 	{
 		StepVector group = sorted_verts_wo_incoming_edges();
 		for( auto s : group ) {cout << s << " ";} cout << endl;
 
-		remove_step( group.front() );
+		const StepId next_step = group.front();
+		remove_step( next_step );
+		order.emplace_back( next_step );
 	}
+
+	cout << "1) Order of steps: ";
+	for( auto s : order )
+		cout << s;
+	cout << endl;
 
 	return 0;
 }
