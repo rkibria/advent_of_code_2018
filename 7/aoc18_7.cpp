@@ -65,14 +65,18 @@ int main( int argc, char* argv[] )
 			incoming[ dst ].emplace_back( src );
 		};
 
-	for( const auto& instr : instructions )
-	{
-		add_edge( instr.first, instr.second );
-	}
+	auto create_incoming_adjacency_list = [ & ]() {
+			incoming.clear();
+			for( const auto& instr : instructions )
+			{
+				add_edge( instr.first, instr.second );
+			}
+		};
 
+	create_incoming_adjacency_list();
 	cout << "total steps: " << incoming.size() << endl;
 
-	/* PART 1 */
+	// PART 1
 	auto sorted_steps_wo_prereqs = [ &incoming ]() {
 			StepVector group;
 			for( auto& itr : incoming )
@@ -95,23 +99,32 @@ int main( int argc, char* argv[] )
 			}
 		};
 
-	StepVector order;
+	StepVector order_1;
 	while( incoming.size() )
 	{
 		StepVector ready_steps = sorted_steps_wo_prereqs();
 		const StepId next_step = ready_steps.front();
 		remove_step( next_step );
 
-		order.emplace_back( next_step );
+		order_1.emplace_back( next_step );
 	}
 
 	cout << "1) Order of steps: ";
-	for( auto s : order )
+	for( auto s : order_1 )
 		cout << s;
 	cout << endl;
 
-	/* PART 2 */
+	// PART 2
+	create_incoming_adjacency_list();
 
+	const int base_step_time = 0;
+
+	auto step_completion_time = [ base_step_time ]( StepId step ) {
+			return base_step_time + static_cast< int >( step - 'A' ) + 1;
+		};
+
+	for( auto s : order_1 )
+		cout << s << ":" << step_completion_time( s ) << endl;
 
 	return 0;
 }
