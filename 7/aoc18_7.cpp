@@ -72,7 +72,8 @@ int main( int argc, char* argv[] )
 
 	cout << "total steps: " << incoming.size() << endl;
 
-	auto sorted_verts_wo_incoming_edges = [ &incoming ]() {
+	/* PART 1 */
+	auto sorted_steps_wo_prereqs = [ &incoming ]() {
 			StepVector group;
 			for( auto& itr : incoming )
 			{
@@ -97,11 +98,10 @@ int main( int argc, char* argv[] )
 	StepVector order;
 	while( incoming.size() )
 	{
-		StepVector group = sorted_verts_wo_incoming_edges();
-		for( auto s : group ) {cout << s << " ";} cout << endl;
-
-		const StepId next_step = group.front();
+		StepVector ready_steps = sorted_steps_wo_prereqs();
+		const StepId next_step = ready_steps.front();
 		remove_step( next_step );
+
 		order.emplace_back( next_step );
 	}
 
@@ -109,6 +109,9 @@ int main( int argc, char* argv[] )
 	for( auto s : order )
 		cout << s;
 	cout << endl;
+
+	/* PART 2 */
+
 
 	return 0;
 }
