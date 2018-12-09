@@ -117,13 +117,13 @@ int main( int argc, char* argv[] )
 	// PART 2
 	create_incoming_adjacency_list();
 
-	const int base_step_time = 0;
+	const size_t num_workers = 5;	// 2 for test
+	const int base_step_time = 60;	// 0 for test
 
 	auto step_completion_time = [ base_step_time ]( StepId step ) {
 			return base_step_time + static_cast< int >( step - 'A' ) + 1;
 		};
 
-	const size_t num_workers = 2;
 	const StepId no_task = 0;
 
 	vector< StepId > worker_tasks( num_workers, no_task );
@@ -148,41 +148,53 @@ int main( int argc, char* argv[] )
 			return task_progress.find( step ) != task_progress.end();
 		};
 
+	auto process_tasks = [ & ]() {
+			for( size_t i = 0; i < worker_tasks.size(); ++i )
+			{
+				const auto step = worker_tasks[ i ];
+				if( step != no_task )
+				{
+					--task_progress[ step ];
+					if( task_progress[ step ] == 0 )
+					{
+						worker_tasks[ i ] = no_task;
+						task_progress.erase( step );
+						remove_step( step );
+					}
+				}
+			}
+		};
+
 	int time = 0;
-	while( time < 10 )
+	while( true )
 	{
-		cout << "*** t = " << time << endl;
+		process_tasks();
 
 		StepVector ready_steps = sorted_steps_wo_prereqs();
-		cout << "ready_steps: "; for( auto& i : ready_steps ) cout << i << " "; cout << endl;
+		if( ready_steps.empty() )
+			break;
 
 		IndexVector free_workers = get_free_workers();
-		cout << "free_workers: "; for( auto& i : free_workers ) cout << i << " "; cout << endl;
 
 		for( auto step : ready_steps )
 		{
 			if( free_workers.empty() )
-			{
-				cout << "no more workers free" << endl;
 				break;
-			}
 
 			if( !is_step_in_progress( step ) )
 			{
-				cout << "try to assign ready step " << step << endl;
 				size_t scheduled_worker = free_workers.back();
 				free_workers.pop_back();
-				cout << "schedule worker " << scheduled_worker << endl;
+
 				worker_tasks[ scheduled_worker ] = step;
 				task_progress[ step ] = step_completion_time( step );
 			}
-
 		}
 
 		++time;
 	}
 
-	cout << "2) Completion time: " << time;
+	cout << "2) Completion time with " << num_workers << " workers and base step time " << base_step_time << ": " << time;
 
 	return 0;
 }
