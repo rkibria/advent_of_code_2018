@@ -6,36 +6,7 @@
 #include <sstream>
 #include <unordered_map>
 #include <algorithm>
-#include <list>
 using namespace std;
-
-using StepId = char;
-using Instruction = pair< StepId, StepId >;
-using AdjacencyElements = vector< StepId >;
-using AdjacencyList = unordered_map< StepId, AdjacencyElements >;
-
-struct StepData
-{
-	bool visited;
-	int depth;
-};
-
-using StepMap = unordered_map< StepId, StepData >;
-
-void dfs( AdjacencyList& lst, StepId step, StepMap& smp )
-{
-	cout << "dfs: " << step << endl;
-	smp[ step ].visited = true;
-
-	for( const auto prev_step : lst[ step ] )
-	{
-		if( !smp[ prev_step ].visited )
-		{
-			cout << step << " -> " << prev_step << endl;
-			dfs( lst, prev_step, smp );
-		}
-	}
-}
 
 int main( int argc, char* argv[] )
 {
@@ -44,6 +15,9 @@ int main( int argc, char* argv[] )
 		cout << "Usage: " << argv[ 0 ] << " <input file>" << endl;
 		return -1;
 	}
+
+	using StepId = char;
+	using Instruction = pair< StepId, StepId >;
 
 	vector< Instruction > instructions;
 
@@ -78,57 +52,29 @@ int main( int argc, char* argv[] )
 
 	cout << "Instructions: " << instructions.size() << endl;
 
-	auto initialize_adjacency_list = []( AdjacencyList& lst, StepId src, StepId dst ) {
-			if( lst.find( src ) == lst.end() )
-				lst[ src ] = AdjacencyElements();
-			if( lst.find( dst ) == lst.end() )
-				lst[ dst ] = AdjacencyElements();
+	using StepVector = vector< StepId >;
+	using AdjacencyList = unordered_map< StepId, StepVector >;
+
+	AdjacencyList incoming;
+
+	auto add_edge = [ &incoming ]( StepId src, StepId dst ) {
+			if( incoming.find( src ) == incoming.end() )
+				incoming[ src ] = StepVector();
+			if( incoming.find( dst ) == incoming.end() )
+				incoming[ dst ] = StepVector();
+			incoming[ dst ].emplace_back( src );
 		};
 
-	auto initialize_step_map = []( StepMap& smp, StepId step ) {
-			if( smp.find( step ) == smp.end() )
-				smp[ step ] = StepData{ false, 0 };
-		};
-
-	StepMap smp;
-	AdjacencyList incoming, outgoing;
 	for( const auto& instr : instructions )
 	{
-		const auto src = instr.first;
-		const auto dst = instr.second;
-
-		initialize_step_map( smp, src );
-		initialize_step_map( smp, dst );
-
-		initialize_adjacency_list( incoming, src, dst );
-		initialize_adjacency_list( outgoing, src, dst );
-		incoming[ dst ].emplace_back( src );
-		outgoing[ src ].emplace_back( dst );
+		add_edge( instr.first, instr.second );
 	}
 
-	cout << "total steps: " << outgoing.size() << endl;
+	cout << "total steps: " << incoming.size() << endl;
 
-	/*
-	StepId final_step{ 0 };
-	for( auto itr : outgoing )
-	{
-		if( itr.second.empty() )
-		{
-			final_step = itr.first;
-			cout << "final step is " << final_step << endl;
-			break;
-		}
-	}
-	assert( final_step != 0 );
-
-	dfs( incoming, final_step, smp );
-	*/
-
-	using StepGroup = vector< StepId >;
-
-	auto steps_without_succesors = [ & ]() {
-			StepGroup group;
-			for( auto& itr : outgoing )
+	auto sorted_verts_wo_incoming_edges = [ &incoming ]() {
+			StepVector group;
+			for( auto& itr : incoming )
 			{
 				if( itr.second.empty() )
 				{
@@ -139,31 +85,22 @@ int main( int argc, char* argv[] )
 			return group;
 		};
 
-	auto remove_step = [ & ]( StepId step ) {
-			outgoing.erase( step );
-			for( auto& itr : outgoing )
+	auto remove_step = [ &incoming ]( StepId step ) {
+			incoming.erase( step );
+			for( auto& itr : incoming )
 			{
 				auto& v = itr.second;
 				v.erase( remove( v.begin(), v.end(), step ), v.end() );
 			}
 		};
 
-	list< StepGroup > sequence;
-	while( outgoing.size() )
+	while( incoming.size() )
 	{
-		StepGroup group = steps_without_succesors();
+		StepVector group = sorted_verts_wo_incoming_edges();
 		for( auto s : group ) {cout << s << " ";} cout << endl;
-		sequence.push_front( group );
 
-		for( const auto step : group )
-			remove_step( step );
+		remove_step( group.front() );
 	}
-
-	cout << "1) order of steps: ";
-	for( auto& group : sequence )
-		for( auto step : group )
-			cout << step;
-	cout << endl;
 
 	return 0;
 }
