@@ -4,6 +4,7 @@
 #include <vector>
 #include <cassert>
 #include <sstream>
+#include <tuple>
 using namespace std;
 
 using InputVector = vector< size_t >;
@@ -35,6 +36,53 @@ size_t sum_all_metadata( const InputVector& inputs, size_t start_index )
 	node_length += children_length;
 
 	return node_length;
+}
+
+tuple< size_t, size_t > get_node_value( const InputVector& inputs, size_t start_index )
+{
+	const size_t n_children = inputs[ start_index ];
+	const size_t n_metadata = inputs[ start_index + 1 ];
+
+	size_t node_length = 2;
+	node_length += n_metadata;
+
+	size_t children_length = 0;
+	vector< size_t > child_values( n_children );
+	for( size_t i = 0; i < n_children; ++i )
+	{
+		size_t child_length;
+		size_t child_value;
+		tie( child_length, child_value ) = get_node_value( inputs, start_index + 2 + children_length );
+
+		child_values[ i ] = child_value;
+
+		children_length += child_length;
+	}
+	node_length += children_length;
+
+	size_t node_value = 0;
+	if( n_children > 0 )
+	{
+		for( size_t i = 0; i < n_metadata; ++i )
+		{
+			const size_t meta_value = inputs[ start_index + 2 + children_length + i ];
+			if( meta_value > 0 )
+			{
+				const size_t child_index = meta_value - 1;
+				if( child_index < child_values.size() )
+					node_value += child_values[ child_index ];
+			}
+		}
+	}
+	else
+	{
+		for( size_t i = 0; i < n_metadata; ++i )
+		{
+			node_value += inputs[ start_index + 2 + children_length + i ];
+		}
+	}
+
+	return make_tuple( node_length, node_value );
 }
 
 int main( int argc, char * argv[] )
@@ -71,6 +119,14 @@ int main( int argc, char * argv[] )
 	assert( inputs_read == inputs.size() );
 
 	cout << "1) sum of metadata: " << metadata_sum << endl;
+
+	// PART 2
+	size_t inputs_read_2;
+	size_t root_value;
+	tie( inputs_read_2, root_value ) = get_node_value( inputs, 0 );
+	assert( inputs_read_2 == inputs.size() );
+
+	cout << "2) root node value: " << root_value << endl;
 
 	return 0;
 }
