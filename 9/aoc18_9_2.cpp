@@ -7,8 +7,8 @@ using namespace std;
 
 int main( int argc, char * argv[] )
 {
-	const size_t num_players = 405; // 9; // 405; // 10405;
-	const size_t last_marble = 71700 * 100; // 71700 * 100; // 25; // 71700; // * 100;
+	const size_t num_players = 405;
+	const size_t last_marble = 71700 * 100;
 
 	cout << "number of players: " << num_players << endl;
 	cout << "last marble: " << last_marble << endl;
@@ -57,51 +57,65 @@ int main( int argc, char * argv[] )
 		{
 			scores[ cur_p ] += cur_m;
 
+			const size_t cclkw_distance = 7;
+
+			auto other_m_i_itr = circle.begin();
 			size_t other_m_i{ 0 };
-			if( cur_i >= 7 )
-				other_m_i = cur_i - 7;
+			if( cur_i >= cclkw_distance )
+			{
+				// cout << cur_i << endl;
+				other_m_i = cur_i - cclkw_distance;
+
+				// other_m_i_itr = get_iterator( other_m_i );
+
+				other_m_i_itr = cur_i_itr;
+				for( size_t k = 0; k < cclkw_distance; ++k )
+				{
+					assert( other_m_i_itr != circle.begin() );
+					--other_m_i_itr;
+				}
+			}
 			else
 			{
-				other_m_i = circle.size() - ( 7 - cur_i );
+				other_m_i = circle.size() - ( cclkw_distance - cur_i );
+				other_m_i_itr = get_iterator( other_m_i );
 			}
-
-			auto other_m_i_itr = get_iterator( other_m_i );
 
 			scores[ cur_p ] += *other_m_i_itr;
 
-			other_m_i_itr = circle.erase( other_m_i_itr );
+			cur_i_itr = circle.erase( other_m_i_itr );
 			cur_i = other_m_i;
-			cur_i_itr = other_m_i_itr;
-			// cout << "!!!" << endl;
 		}
 		else
 		{
 			const size_t one_clockwise = ( cur_i + 1 ) % circle.size();
 			if( one_clockwise == circle.size() - 1 )
 			{
-				// cout << "@@@" << endl;
+				cout << "@@@" << endl;
 				circle.insert( circle.end(), cur_m );
 				cur_i = circle.size() - 1;
 				cur_i_itr = circle.end();
+				--cur_i_itr;
 			}
 			else
 			{
+				const size_t two_clockwise = ( one_clockwise + 1 ) % circle.size();
+
 				// cout << "+++" << endl;
 				++cur_i_itr;
 				if( cur_i_itr == circle.end() )
 				{
 					cur_i_itr = circle.begin();
-					// cout << "+++R1" << endl;
+					cout << "+++R1 " << two_clockwise << endl;
 				}
 
 				++cur_i_itr;
 				if( cur_i_itr == circle.end() )
 				{
 					cur_i_itr = circle.begin();
-					// cout << "+++R2" << endl;
+					++cur_i_itr;
+					cout << "+++R2 " << two_clockwise << endl;
 				}
-
-				const size_t two_clockwise = ( one_clockwise + 1 ) % circle.size();
 
 				cur_i_itr = circle.insert( cur_i_itr, cur_m );
 				cur_i = two_clockwise;
