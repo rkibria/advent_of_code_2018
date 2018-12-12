@@ -21,7 +21,7 @@ int main( int argc, char * argv[] )
 	size_t cur_i = 0;
 	size_t cur_p = 0;
 
-	for( int i = 0; i < last_marble + 1; ++i )
+	for( size_t i = 0; i < last_marble + 1; ++i )
 	{
 		if( cur_m % 23 == 0)
 		{
@@ -57,25 +57,8 @@ int main( int argc, char * argv[] )
 
 		++cur_m;
 
-		/*
-		cout << cur_p + 1 << ": ";
-		for( size_t j = 0; j < circle.size(); ++j )
-		{
-			if( j == cur_i )
-				cout << ".";
-			cout << circle[ j ] << " ";
-		}
-		cout << endl << endl;
-		*/
-
 		cur_p = ( cur_p + 1 ) % num_players;
 	}
-
-	/*
-	cout << "scores:" << endl;
-	for(auto i : scores) cout << i << " ";
-	cout << endl;
-	*/
 
 	cout << "high score: " << *max_element( scores.begin(), scores.end() );
 
