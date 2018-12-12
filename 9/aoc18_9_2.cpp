@@ -7,8 +7,8 @@ using namespace std;
 
 int main( int argc, char * argv[] )
 {
-	const size_t num_players = 405; // 9; // 10405;
-	const size_t last_marble = 71700 * 100; // 25; // 71700; // * 100;
+	const size_t num_players = 405; // 9; // 405; // 10405;
+	const size_t last_marble = 71700 * 100; // 71700 * 100; // 25; // 71700; // * 100;
 
 	cout << "number of players: " << num_players << endl;
 	cout << "last marble: " << last_marble << endl;
@@ -25,9 +25,26 @@ int main( int argc, char * argv[] )
 
 	auto get_iterator = [ &circle ]( size_t i ) {
 			assert( i < circle.size() );
+
+			// cout << i << " (" << circle.size() << ") " << (static_cast<double>(i) / circle.size()) << endl;
+
 			auto itr = circle.begin();
-			for( size_t j = 0; j < i; ++j )
-				++itr;
+
+			if( i < circle.size() / 2 )
+			{
+				for( size_t j = 0; j < i; ++j )
+					++itr;
+			}
+			else
+			{
+				itr = circle.end();
+				--itr;
+
+				const auto ss = circle.size() - i;
+				for( size_t j = 0; j < ss; ++j )
+					--itr;
+			}
+
 			return itr;
 		};
 
