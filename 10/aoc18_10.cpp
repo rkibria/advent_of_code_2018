@@ -6,11 +6,19 @@
 #include <sstream>
 #include <algorithm>
 #include <memory>
+#include <limits>
+#include <tuple>
 using namespace std;
 
 struct Point
 {
 	int x, y, vx, vy;
+
+	void advance()
+	{
+		x += vx;
+		y += vy;
+	}
 };
 
 int main( int argc, char* argv[] )
@@ -93,6 +101,39 @@ int main( int argc, char* argv[] )
 	}
 
 	cout << "message points: " << message.size() << endl;
+
+	auto advance = [ &message ]() {
+			for( auto& p : message )
+				p->advance();
+		};
+
+	auto extent = [ &message ]() {
+			int x1{ numeric_limits< int >::max() },
+				y1{ numeric_limits< int >::max() },
+				x2{ numeric_limits< int >::min() },
+				y2{ numeric_limits< int >::min() };
+			for( auto& p : message )
+			{
+				x1 = min( x1, p->x );
+				y1 = min( y1, p->y );
+
+				x2 = max( x2, p->x );
+				y2 = max( y2, p->y );
+			}
+			return tuple< int, int, int, int >( x1, y1, x2, y2 );
+		};
+
+	int x1, y1, x2, y2, w, h;
+
+	do
+	{
+		advance();
+		tie( x1, y1, x2, y2 ) = extent();
+		w = x2 - x1;
+		h = y2 - y1;
+
+		cout << "w: " << w << ", h: " << h << endl;
+	} while( w > 100 && h > 100 );
 
 	return 0;
 }
