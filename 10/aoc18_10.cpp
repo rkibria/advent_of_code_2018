@@ -8,6 +8,7 @@
 #include <memory>
 #include <limits>
 #include <tuple>
+#include <set>
 using namespace std;
 
 struct Point
@@ -125,6 +126,33 @@ int main( int argc, char* argv[] )
 
 	int x1, y1, x2, y2, w, h;
 
+	auto print = [ &message, &x1, &y1, &x2, &y2, &w, &h ]() {
+			using Pnt = pair< int, int >;
+			set< Pnt > points;
+			for( auto& p : message )
+				points.insert( Pnt( p->x, p->y) );
+			for( auto y = y1; y <= y2; ++y )
+			{
+				for( auto x = x1; x <= x2; ++x )
+				{
+					if( points.find( Pnt( x, y ) ) == points.end() )
+						cout << ".";
+					else
+						cout << "#";
+				}
+				cout << endl;
+			}
+		};
+
+	do
+	{
+		advance();
+		tie( x1, y1, x2, y2 ) = extent();
+		w = x2 - x1;
+		h = y2 - y1;
+
+	} while( w > 40 && h > 40 );
+
 	do
 	{
 		advance();
@@ -133,7 +161,9 @@ int main( int argc, char* argv[] )
 		h = y2 - y1;
 
 		cout << "w: " << w << ", h: " << h << endl;
-	} while( w > 100 && h > 100 );
+		print();
+
+	} while( w < 100 );
 
 	return 0;
 }
