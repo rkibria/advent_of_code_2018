@@ -103,7 +103,10 @@ int main( int argc, char* argv[] )
 
 	cout << "message points: " << message.size() << endl;
 
-	auto advance = [ &message ]() {
+	int t = 0;
+
+	auto advance = [ &message, &t ]() {
+			++t;
 			for( auto& p : message )
 				p->advance();
 		};
@@ -124,9 +127,11 @@ int main( int argc, char* argv[] )
 			return tuple< int, int, int, int >( x1, y1, x2, y2 );
 		};
 
-	int x1, y1, x2, y2, w, h;
+	int x1 = 0, y1 = 0, x2 = 0, y2 = 0, w = 0, h = 0;
 
-	auto print = [ &message, &x1, &y1, &x2, &y2, &w, &h ]() {
+	auto print = [ &message, &x1, &y1, &x2, &y2, &w, &h, &t ]() {
+			cout << "t = " << t << endl;
+			cout << "w: " << w << ", h: " << h << endl;
 			using Pnt = pair< int, int >;
 			set< Pnt > points;
 			for( auto& p : message )
@@ -150,7 +155,6 @@ int main( int argc, char* argv[] )
 		tie( x1, y1, x2, y2 ) = extent();
 		w = x2 - x1;
 		h = y2 - y1;
-
 	} while( w > 40 && h > 40 );
 
 	do
@@ -160,9 +164,7 @@ int main( int argc, char* argv[] )
 		w = x2 - x1;
 		h = y2 - y1;
 
-		cout << "w: " << w << ", h: " << h << endl;
 		print();
-
 	} while( w < 100 );
 
 	return 0;
