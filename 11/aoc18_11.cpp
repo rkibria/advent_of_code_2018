@@ -66,12 +66,23 @@ int main( int argc, char* argv[] )
 		<< get< 0 >( max_pos_1 ) << "," << get< 1 >( max_pos_1 ) << " power " << get< 2 >( max_pos_1 ) << endl; 
 
 	// PART 2
+	size_t best_square_size = 1;
+	auto max_pos_2 = max_square( 1 );
+	for( size_t square_size = 2; square_size <= grid_size - 1; ++square_size )
+	{
+		if( square_size % 10 == 0 )
+			cout << square_size << "..." << endl;
 
-	// for( size_t square_size = 1; square_size <= grid_size - 1; ++square_size )
-	// {
-		// cout << square_size << "..." << endl;
-		// auto max_pos = max_square( square_size );
-	// }
+		auto mp = max_square( square_size );
+		if( get< 2 >( mp ) > get< 2 >( max_pos_2 ) )
+		{
+			max_pos_2 = mp;
+			best_square_size = square_size;
+		}
+	}
+
+	cout << "2) x,y,size identifier of best square: " << get< 0 >( max_pos_2 ) << ","
+		<< get< 1 >( max_pos_2 ) << "," << best_square_size << endl;
 
 	return 0;
 }
