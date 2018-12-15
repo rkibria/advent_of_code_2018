@@ -2,6 +2,7 @@
 #include <cassert>
 #include <vector>
 #include <limits>
+#include <tuple>
 using namespace std;
 
 int main( int argc, char* argv[] )
@@ -38,8 +39,7 @@ int main( int argc, char* argv[] )
 			grid[ y ][ x ] = powerlevel( serial_number, x, y );
 
 	auto max_square = [ &grid ]( size_t square_size ) {
-			int max_sum = numeric_limits< int >::min();
-			pair< size_t, size_t > max_pos{ 0, 0 };
+			tuple< size_t, size_t, int > max_pos{ 0, 0, numeric_limits< int >::min() };
 
 			for( size_t y = 0 ; y < grid_size - square_size; ++y )
 				for( size_t x = 0 ; x < grid_size - square_size; ++x )
@@ -49,20 +49,29 @@ int main( int argc, char* argv[] )
 						for( size_t j = 0 ; j < square_size; ++j )
 							sum += grid[ y + i ][ x + j ];
 
-					if( sum > max_sum )
+					if( sum > get< 2 >( max_pos ) )
 					{
-						max_sum = sum;
-						max_pos.first = x;
-						max_pos.second = y;
+						get< 0 >( max_pos ) = x;
+						get< 1 >( max_pos ) = y;
+						get< 2 >( max_pos ) = sum;
 					}
 				}
 
 			return max_pos;
 		};
 
+	// PART 1
 	auto max_pos_1 = max_square( 3 );
 	cout << "1) largest 3x3 square position for serial number " << serial_number << ": "
-		<< max_pos_1.first << "," << max_pos_1.second << endl; 
+		<< get< 0 >( max_pos_1 ) << "," << get< 1 >( max_pos_1 ) << " power " << get< 2 >( max_pos_1 ) << endl; 
+
+	// PART 2
+
+	// for( size_t square_size = 1; square_size <= grid_size - 1; ++square_size )
+	// {
+		// cout << square_size << "..." << endl;
+		// auto max_pos = max_square( square_size );
+	// }
 
 	return 0;
 }
