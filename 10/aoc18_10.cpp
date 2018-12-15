@@ -7,7 +7,6 @@
 #include <algorithm>
 #include <memory>
 #include <limits>
-#include <tuple>
 #include <set>
 using namespace std;
 
@@ -103,7 +102,7 @@ int main( int argc, char* argv[] )
 
 	cout << "message points: " << message.size() << endl;
 
-	int t = 0;
+	int x1 = 0, y1 = 0, x2 = 0, y2 = 0, w = 0, h = 0, t = 0;
 
 	auto advance = [ &message, &t ]() {
 			++t;
@@ -111,11 +110,11 @@ int main( int argc, char* argv[] )
 				p->advance();
 		};
 
-	auto extent = [ &message ]() {
-			int x1{ numeric_limits< int >::max() },
-				y1{ numeric_limits< int >::max() },
-				x2{ numeric_limits< int >::min() },
-				y2{ numeric_limits< int >::min() };
+	auto compute_extent = [ &message, &x1, &y1, &x2, &y2, &w, &h ]() {
+			x1 = numeric_limits< int >::max();
+			y1 = numeric_limits< int >::max();
+			x2 = numeric_limits< int >::min();
+			y2 = numeric_limits< int >::min();
 			for( auto& p : message )
 			{
 				x1 = min( x1, p->x );
@@ -124,10 +123,9 @@ int main( int argc, char* argv[] )
 				x2 = max( x2, p->x );
 				y2 = max( y2, p->y );
 			}
-			return tuple< int, int, int, int >( x1, y1, x2, y2 );
+			w = x2 - x1;
+			h = y2 - y1;
 		};
-
-	int x1 = 0, y1 = 0, x2 = 0, y2 = 0, w = 0, h = 0;
 
 	auto print = [ &message, &x1, &y1, &x2, &y2, &w, &h, &t ]() {
 			cout << "t = " << t << endl;
@@ -152,19 +150,14 @@ int main( int argc, char* argv[] )
 	do
 	{
 		advance();
-		tie( x1, y1, x2, y2 ) = extent();
-		w = x2 - x1;
-		h = y2 - y1;
+		compute_extent();
 	} while( w > 40 && h > 40 );
 
 	do
 	{
-		advance();
-		tie( x1, y1, x2, y2 ) = extent();
-		w = x2 - x1;
-		h = y2 - y1;
-
 		print();
+		advance();
+		compute_extent();
 	} while( w < 100 );
 
 	return 0;
