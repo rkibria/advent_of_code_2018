@@ -1,7 +1,6 @@
 #include <iostream>
 #include <cassert>
 #include <vector>
-#include <algorithm>
 #include <limits>
 using namespace std;
 
@@ -38,26 +37,32 @@ int main( int argc, char* argv[] )
 		for( size_t x = 0 ; x < grid_size; ++x )
 			grid[ y ][ x ] = powerlevel( serial_number, x, y );
 
-	int max_sum = numeric_limits< int >::min();
-	pair< size_t, size_t > max_pos{ 0, 0 };
-	for( size_t y = 0 ; y < grid_size - 3; ++y )
-		for( size_t x = 0 ; x < grid_size - 3; ++x )
-		{
-			int sum = 0;
-			for( size_t i = 0 ; i < 3; ++i )
-				for( size_t j = 0 ; j < 3; ++j )
-					sum += grid[ y + i ][ x + j ];
+	auto max_square = [ &grid ]( size_t square_size ) {
+			int max_sum = numeric_limits< int >::min();
+			pair< size_t, size_t > max_pos{ 0, 0 };
 
-			if( sum > max_sum )
-			{
-				max_sum = sum;
-				max_pos.first = x;
-				max_pos.second = y;
-			}
-		}
+			for( size_t y = 0 ; y < grid_size - square_size; ++y )
+				for( size_t x = 0 ; x < grid_size - square_size; ++x )
+				{
+					int sum = 0;
+					for( size_t i = 0 ; i < square_size; ++i )
+						for( size_t j = 0 ; j < square_size; ++j )
+							sum += grid[ y + i ][ x + j ];
 
+					if( sum > max_sum )
+					{
+						max_sum = sum;
+						max_pos.first = x;
+						max_pos.second = y;
+					}
+				}
+
+			return max_pos;
+		};
+
+	auto max_pos_1 = max_square( 3 );
 	cout << "1) largest 3x3 square position for serial number " << serial_number << ": "
-		<< max_pos.first << "," << max_pos.second << " (total power " << max_sum << ")" << endl; 
+		<< max_pos_1.first << "," << max_pos_1.second << endl; 
 
 	return 0;
 }
