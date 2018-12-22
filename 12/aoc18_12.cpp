@@ -15,9 +15,9 @@ int main( int argc, char* argv[] )
 		return -1;
 	}
 
-	const size_t zero_pos = 20;
+	const size_t padding_size = 100;
 	const size_t note_size = 5;
-	string state( zero_pos, '.' );
+	string state( padding_size, '.' );
 
 	map< string, char > notes;
 
@@ -64,21 +64,40 @@ int main( int argc, char* argv[] )
 		return -1;
 	}
 
-	state.append( zero_pos, '.' );
-	cout << "initial state: " << state << endl;
+	state.append( padding_size, '.' );
 	cout << "notes: " << notes.size() << endl;
 
 	// PART 1
-	for( size_t i = 0; i < state.length() - note_size; ++i )
+	auto grow = [ &state, &notes, note_size ]() {	
+			string next_state = state;
+			for( size_t i = 0; i < state.length() - note_size; ++i )
+			{
+				const string stretch = state.substr( i, note_size );
+				if( notes.find( stretch ) != notes.end() )
+				{
+					next_state[ i + ( note_size / 2 ) ] = notes[ stretch ];
+				}
+			}
+			return next_state;
+		};
+	
+	for( int i = 0; i < 20; ++i )
 	{
-		const string stretch = state.substr( i, note_size );
-		cout << stretch << endl;
-		if( notes.find( stretch ) != notes.end() )
-		{
-			cout << "=> " << notes[ stretch ] << endl;
-		}
+		string next_state = grow();
+		state = next_state;
 	}
 	
+	int sum_1 = 0;
+	for( size_t i = 0; i < state.length(); ++i )
+	{
+		const int pos = static_cast< int >( i ) - static_cast< int >( padding_size );
+		if( state[ i ] == '#' )
+		{
+			sum_1 += pos;
+		}
+	}
+	cout << "1) sum of numbers of plant-containing pots: " << sum_1 << endl;
+
 	return 0;
 }
 
