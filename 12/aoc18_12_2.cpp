@@ -39,6 +39,7 @@ int main( int argc, char* argv[] )
 		assert( token == "state:" );
 
 		ifs >> token;
+		assert( !token.empty() );
 		state.resize( token.size() );
 		transform( token.begin(), token.end(), state.begin(), char_to_bool );
 
@@ -77,26 +78,21 @@ int main( int argc, char* argv[] )
 
 	// PART 1
 
-	// int offset = 0;
-	size_t hash = ( state[ 0 ] << 1 ) | state[ 1 ];
-	for( size_t i = 0; i < state.size(); ++i )
-	{
-		const auto next_bit = ( i < state.size() - 2 ) ? ( state[ i + 2 ] ? 1 : 0 ) : 0; 
-		hash = ( ( hash << 1 ) | next_bit ) & 0x1f;
-	}
+	size_t offset = 200;
+	
 
+	state.insert( state.begin(), offset, false );
+	state.insert( state.end(), offset, false );
 
-/*
-	string next_state;
-	auto grow = [ &state, &next_state, &notes, note_size ]() {	
-			next_state = state;
-			for( size_t i = 0; i < state.length() - note_size; ++i )
+	vector< bool > next_state( state.size() );
+
+	auto grow = [ &state, &next_state, &notes ]() {
+			size_t hash = ( state[ 0 ] << 1 ) | state[ 1 ];
+			for( size_t i = 0; i < state.size(); ++i )
 			{
-				const string stretch = state.substr( i, note_size );
-				if( notes.find( stretch ) != notes.end() )
-				{
-					next_state[ i + ( note_size / 2 ) ] = notes[ stretch ];
-				}
+				const auto next_bit = ( i < state.size() - 2 ) ? ( state[ i + 2 ] ? 1 : 0 ) : 0; 
+				hash = ( ( hash << 1 ) | next_bit ) & 0x1f;
+				next_state[ i ] = notes[ hash ];
 			}
 			state.swap( next_state );
 		};
@@ -106,7 +102,6 @@ int main( int argc, char* argv[] )
 	{
 		grow();
 	}
-	*/
 
 	return 0;
 }
