@@ -77,12 +77,10 @@ int main( int argc, char* argv[] )
 	}
 
 	// PART 1
+	size_t padding = 200;
 
-	size_t offset = 200;
-	
-
-	state.insert( state.begin(), offset, false );
-	state.insert( state.end(), offset, false );
+	state.insert( state.begin(), padding, false );
+	state.insert( state.end(), padding, false );
 
 	vector< bool > next_state( state.size() );
 
@@ -97,11 +95,21 @@ int main( int argc, char* argv[] )
 			state.swap( next_state );
 		};
 
-	// original: 2 sec
-	for( size_t i = 0; i < 100000; ++i )
+	for( size_t i = 0; i < 20; ++i )
 	{
 		grow();
 	}
+	
+	int sum_1 = 0;
+	for( size_t i = 0; i < state.size(); ++i )
+	{
+		const int pos = static_cast< int >( i ) - static_cast< int >( padding );
+		if( state[ i ] )
+		{
+			sum_1 += pos;
+		}
+	}
+	cout << "1) sum of numbers of plant-containing pots: " << sum_1 << endl;
 
 	return 0;
 }
