@@ -4,8 +4,7 @@
 #include <cassert>
 #include <vector>
 #include <sstream>
-#include <map>
-#include <time.h>
+#include <array>
 using namespace std;
 
 int main( int argc, char* argv[] )
@@ -16,11 +15,13 @@ int main( int argc, char* argv[] )
 		return -1;
 	}
 
-	const size_t padding_size = 100;
 	const size_t note_size = 5;
-	string state( padding_size, '.' );
+	const size_t note_count = 1 << note_size;
 
-	map< string, char > notes;
+	vector< bool > state;
+	array< bool, note_count > notes;
+
+	auto char_to_bool = []( char c ) { return c == '#'; };
 
 	ifstream file( argv[ 1 ] );
 	if( file.is_open() )
@@ -37,24 +38,32 @@ int main( int argc, char* argv[] )
 		assert( token == "state:" );
 
 		ifs >> token;
-		state.append( token );
+		for( auto c : token )
+			state.emplace_back( char_to_bool( c ) );
 
 		while( getline( file, line ) )
 		{
 			if( !line.empty() )
 			{
-				string note;
 				istringstream ifs( line );
-				ifs >> note;
-				assert( note.size() == note_size );
+				
+				ifs >> token;
+				assert( token.size() == note_size );
+				
+				size_t note_hash = 0;
+				for( auto c : token )
+				{
+					note_hash = ( note_hash << 1 ) | ( char_to_bool( c ) ? 1 : 0 );
+				}
+
 
 				ifs >> token;
 				assert( token == "=>" );
 
 				ifs >> token;
 				assert( token.length() == 1 );
-
-				notes[ note ] = token[ 0 ];
+				
+				notes[ note_hash ] = char_to_bool( token[ 0 ] );
 			}
 		}
 		file.close();
@@ -65,10 +74,8 @@ int main( int argc, char* argv[] )
 		return -1;
 	}
 
-	state.append( padding_size, '.' );
-	cout << "notes: " << notes.size() << endl;
-
 	// PART 1
+	/*
 	string next_state;
 	auto grow = [ &state, &next_state, &notes, note_size ]() {	
 			next_state = state;
@@ -88,7 +95,8 @@ int main( int argc, char* argv[] )
 	{
 		grow();
 	}
-	
+	*/
+
 	return 0;
 }
 
