@@ -95,21 +95,25 @@ int main( int argc, char* argv[] )
 			state.swap( next_state );
 		};
 
+	auto sum_numbers = [ &state, padding ]() {
+			int sum = 0;
+			for( size_t i = 0; i < state.size(); ++i )
+			{
+				const int pos = static_cast< int >( i ) - static_cast< int >( padding );
+				if( state[ i ] )
+				{
+					sum += pos;
+				}
+			}
+			return sum;
+		};
+
 	for( size_t i = 0; i < 20; ++i )
 	{
 		grow();
 	}
 	
-	int sum_1 = 0;
-	for( size_t i = 0; i < state.size(); ++i )
-	{
-		const int pos = static_cast< int >( i ) - static_cast< int >( padding );
-		if( state[ i ] )
-		{
-			sum_1 += pos;
-		}
-	}
-	cout << "1) sum of numbers of plant-containing pots: " << sum_1 << endl;
+	cout << "1) sum of numbers of plant-containing pots: " << sum_numbers() << endl;
 
 	return 0;
 }
