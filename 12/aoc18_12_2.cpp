@@ -77,7 +77,7 @@ int main( int argc, char* argv[] )
 	}
 
 	// PART 1
-	size_t padding = 200;
+	size_t padding = 1000;
 
 	state.insert( state.begin(), padding, false );
 	state.insert( state.end(), padding, false );
@@ -108,12 +108,23 @@ int main( int argc, char* argv[] )
 			return sum;
 		};
 
-	for( size_t i = 0; i < 20; ++i )
+	int last_sum = 0;
+	size_t generation = 0;
+	for( ; generation < 1000; ++generation )
 	{
+		const int sum = sum_numbers();
+		cout << generation << ": " << sum << " (" << ( sum - last_sum ) << ")" << endl;
+		
+		if( generation == 20 )
+			cout << "1) sum of numbers of plant-containing pots: " << sum << endl;
+		
 		grow();
+		last_sum = sum;
 	}
 	
-	cout << "1) sum of numbers of plant-containing pots: " << sum_numbers() << endl;
+	// PART 2: manually read the pattern which starts at generation 100!
+	const size_t sum_2 = 3491 + ( 50000000000 - 100 ) * 25;
+	cout << "2) after 50 billion generations: " << sum_2 << endl;
 
 	return 0;
 }
