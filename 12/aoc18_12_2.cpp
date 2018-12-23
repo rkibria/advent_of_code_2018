@@ -5,6 +5,7 @@
 #include <vector>
 #include <sstream>
 #include <array>
+#include <algorithm>
 using namespace std;
 
 int main( int argc, char* argv[] )
@@ -38,14 +39,15 @@ int main( int argc, char* argv[] )
 		assert( token == "state:" );
 
 		ifs >> token;
-		for( auto c : token )
-			state.emplace_back( char_to_bool( c ) );
+		state.resize( token.size() );
+		transform( token.begin(), token.end(), state.begin(), char_to_bool );
 
 		while( getline( file, line ) )
 		{
 			if( !line.empty() )
 			{
-				istringstream ifs( line );
+				ifs.str( line );
+				ifs.clear();
 				
 				ifs >> token;
 				assert( token.size() == note_size );
@@ -55,7 +57,6 @@ int main( int argc, char* argv[] )
 				{
 					note_hash = ( note_hash << 1 ) | ( char_to_bool( c ) ? 1 : 0 );
 				}
-
 
 				ifs >> token;
 				assert( token == "=>" );
@@ -75,7 +76,17 @@ int main( int argc, char* argv[] )
 	}
 
 	// PART 1
-	/*
+
+	// int offset = 0;
+	size_t hash = ( state[ 0 ] << 1 ) | state[ 1 ];
+	for( size_t i = 0; i < state.size(); ++i )
+	{
+		const auto next_bit = ( i < state.size() - 2 ) ? ( state[ i + 2 ] ? 1 : 0 ) : 0; 
+		hash = ( ( hash << 1 ) | next_bit ) & 0x1f;
+	}
+
+
+/*
 	string next_state;
 	auto grow = [ &state, &next_state, &notes, note_size ]() {	
 			next_state = state;
