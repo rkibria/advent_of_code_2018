@@ -8,36 +8,36 @@
 #include <set>
 using namespace std;
 
-using Coords = pair< size_t, size_t >;
+using Pos = pair< size_t, size_t >;
 using TracksVector = vector< string >;
 
-enum class Dtn { u, d, l, r };
+enum class Dir { u, d, l, r };
 
 struct Cart
 {
 	size_t x, y, turn;
-	Dtn d;
+	Dir d;
 
-	Coords next_pos() const
+	Pos next_pos() const
 	{
 		size_t nx, ny;
 		switch( d )
 		{
-		case Dtn::u:
+		case Dir::u:
 			assert( y > 0 );
 			nx = x;
 			ny = y - 1;
 			break;
-		case Dtn::d:
+		case Dir::d:
 			nx = x;
 			ny = y + 1;
 			break;
-		case Dtn::l:
+		case Dir::l:
 			assert( x > 0 );
 			nx = x - 1;
 			ny = y;
 			break;
-		case Dtn::r:
+		case Dir::r:
 			nx = x + 1;
 			ny = y;
 			break;
@@ -45,12 +45,41 @@ struct Cart
 		default:
 			break;
 		}
-		return Coords( nx, ny );
+		return Pos( nx, ny );
 	}
 
-	Coords move( const TracksVector& tracks )
+	Dir next_direction( char moved_to ) const
 	{
-		Coords nxt = next_pos();
+		switch( moved_to )
+		{
+		case '/':
+			break;
+
+		case '\\':
+			break;
+
+		case '+':
+			break;
+
+		default:
+			break;
+		}
+
+		return Dir::u;
+	}
+
+	Pos move( const TracksVector& tracks )
+	{
+		Pos nxt = next_pos();
+		x = nxt.first;
+		y = nxt.second;
+
+		assert( y < tracks.size() );
+		assert( x < tracks[ y ].size() );
+
+		const Dir nxt_d = next_direction( tracks[ y ][ x ] );
+		d = nxt_d;
+		
 		return nxt;
 	}
 
@@ -83,19 +112,19 @@ int main( int argc, char* argv[] )
 				switch( c )
 				{
 				case '^':
-					carts.emplace_back( make_unique< Cart >( Cart{ x, y, 0, Dtn::u } ) );
+					carts.emplace_back( make_unique< Cart >( Cart{ x, y, 0, Dir::u } ) );
 					line[ x ] = '|';
 					break;
 				case 'v':
-					carts.emplace_back( make_unique< Cart >( Cart{ x, y, 0, Dtn::d } ) );
+					carts.emplace_back( make_unique< Cart >( Cart{ x, y, 0, Dir::d } ) );
 					line[ x ] = '|';
 					break;
 				case '<':
-					carts.emplace_back( make_unique< Cart >( Cart{ x, y, 0, Dtn::l } ) );
+					carts.emplace_back( make_unique< Cart >( Cart{ x, y, 0, Dir::l } ) );
 					line[ x ] = '-';
 					break;
 				case '>':
-					carts.emplace_back( make_unique< Cart >( Cart{ x, y, 0, Dtn::r } ) );
+					carts.emplace_back( make_unique< Cart >( Cart{ x, y, 0, Dir::r } ) );
 					line[ x ] = '-';
 					break;
 				default:
@@ -120,16 +149,16 @@ int main( int argc, char* argv[] )
 	sort( carts.begin(), carts.end(),
 		[]( const unique_ptr< Cart >& a, const unique_ptr< Cart >& b ) { return a->y < b->y; } );
 
-	set< Coords > cart_coords;
+	set< Pos > cart_posns;
 	for( size_t i = 0; i < carts.size(); ++i )
 	{
 		auto& crt = carts[ i ];
 
-		Coords nxt = crt->move( tracks );
+		Pos nxt = crt->move( tracks );
 
-		cart_coords.insert( nxt );
+		cart_posns.insert( nxt );
 
-		cout << crt->x << "," << crt->y << " to " << nxt.first << "," << nxt.second << endl;
+		cout << nxt.first << "," << nxt.second << endl;
 	}
 
 	return 0;
