@@ -83,10 +83,29 @@ struct Cart
 			switch( t )
 			{
 			case Turn::l :
+				switch( d )
+				{
+				case Dir::u : nxt_d = Dir::l;
+				case Dir::d : nxt_d = Dir::r;
+				case Dir::l : nxt_d = Dir::d;
+				case Dir::r : nxt_d = Dir::u;
+				default: break;
+				}
+				nxt_t = Turn::s;
 				break;
 			case Turn::s :
+				nxt_t = Turn::r;
 				break;
 			case Turn::r :
+				switch( d )
+				{
+				case Dir::u : nxt_d = Dir::r;
+				case Dir::d : nxt_d = Dir::l;
+				case Dir::l : nxt_d = Dir::u;
+				case Dir::r : nxt_d = Dir::d;
+				default: break;
+				}
+				nxt_t = Turn::l;
 				break;
 			default:
 				break;
