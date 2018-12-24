@@ -5,9 +5,11 @@
 #include <fstream>
 #include <memory>
 #include <algorithm>
-#include <tuple>
+#include <set>
 using namespace std;
 
+using Coords = pair< size_t, size_t >;
+using TracksVector = vector< string >;
 
 enum class Dtn { u, d, l, r };
 
@@ -16,7 +18,7 @@ struct Cart
 	size_t x, y, turn;
 	Dtn d;
 
-	tuple< size_t, size_t > next_pos() const
+	Coords next_pos() const
 	{
 		size_t nx, ny;
 		switch( d )
@@ -43,7 +45,13 @@ struct Cart
 		default:
 			break;
 		}
-		return make_tuple( nx, ny );
+		return Coords( nx, ny );
+	}
+
+	Coords move( const TracksVector& tracks )
+	{
+		Coords nxt = next_pos();
+		return nxt;
 	}
 
 };
@@ -57,7 +65,7 @@ int main( int argc, char* argv[] )
 		return -1;
 	}
 
-	vector< string > tracks;
+	TracksVector tracks;
 	vector< unique_ptr< Cart > > carts;
 
 	ifstream file( argv[ 1 ] );
@@ -112,16 +120,16 @@ int main( int argc, char* argv[] )
 	sort( carts.begin(), carts.end(),
 		[]( const unique_ptr< Cart >& a, const unique_ptr< Cart >& b ) { return a->y < b->y; } );
 
-
-
+	set< Coords > cart_coords;
 	for( size_t i = 0; i < carts.size(); ++i )
 	{
 		auto& crt = carts[ i ];
 
-		size_t nx, ny;
-		tie( nx, ny ) = crt->next_pos();
+		Coords nxt = crt->move( tracks );
 
-		cout << crt->x << "," << crt->y << " to " << nx << "," << ny << endl;
+		cart_coords.insert( nxt );
+
+		cout << crt->x << "," << crt->y << " to " << nxt.first << "," << nxt.second << endl;
 	}
 
 	return 0;
