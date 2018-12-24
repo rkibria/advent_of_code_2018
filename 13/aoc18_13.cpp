@@ -12,10 +12,12 @@ using Pos = pair< size_t, size_t >;
 using TracksVector = vector< string >;
 
 enum class Dir { u, d, l, r };
+enum class Turn { l, s, r };
 
 struct Cart
 {
-	size_t x, y, turn;
+	size_t x, y;
+	Turn t;
 	Dir d;
 
 	Pos next_pos() const
@@ -48,10 +50,10 @@ struct Cart
 		return Pos( nx, ny );
 	}
 
-	pair< Dir, size_t > next_direction( char moved_to ) const
+	pair< Dir, Turn > next_direction( char moved_to ) const
 	{
 		Dir nxt_d = d;
-		size_t nxt_turn = turn;
+		Turn nxt_t = t;
 
 		switch( moved_to )
 		{
@@ -78,13 +80,24 @@ struct Cart
 		break;
 
 		case '+' :
+			switch( t )
+			{
+			case Turn::l :
+				break;
+			case Turn::s :
+				break;
+			case Turn::r :
+				break;
+			default:
+				break;
+			}
 			break;
 
 		default:
 			break;
 		}
 
-		return pair< Dir, size_t >( nxt_d, nxt_turn );
+		return pair< Dir, Turn >( nxt_d, nxt_t );
 	}
 
 	Pos move( const TracksVector& tracks )
@@ -96,9 +109,9 @@ struct Cart
 		assert( y < tracks.size() );
 		assert( x < tracks[ y ].size() );
 
-		const pair< Dir, size_t > nxt_d = next_direction( tracks[ y ][ x ] );
+		const pair< Dir, Turn > nxt_d = next_direction( tracks[ y ][ x ] );
 		d = nxt_d.first;
-		turn = nxt_d.second;
+		t = nxt_d.second;
 		
 		return nxt_p;
 	}
@@ -132,19 +145,19 @@ int main( int argc, char* argv[] )
 				switch( c )
 				{
 				case '^':
-					carts.emplace_back( make_unique< Cart >( Cart{ x, y, 0, Dir::u } ) );
+					carts.emplace_back( make_unique< Cart >( Cart{ x, y, Turn::l, Dir::u } ) );
 					line[ x ] = '|';
 					break;
 				case 'v':
-					carts.emplace_back( make_unique< Cart >( Cart{ x, y, 0, Dir::d } ) );
+					carts.emplace_back( make_unique< Cart >( Cart{ x, y, Turn::l, Dir::d } ) );
 					line[ x ] = '|';
 					break;
 				case '<':
-					carts.emplace_back( make_unique< Cart >( Cart{ x, y, 0, Dir::l } ) );
+					carts.emplace_back( make_unique< Cart >( Cart{ x, y, Turn::l, Dir::l } ) );
 					line[ x ] = '-';
 					break;
 				case '>':
-					carts.emplace_back( make_unique< Cart >( Cart{ x, y, 0, Dir::r } ) );
+					carts.emplace_back( make_unique< Cart >( Cart{ x, y, Turn::l, Dir::r } ) );
 					line[ x ] = '-';
 					break;
 				default:
