@@ -48,39 +48,59 @@ struct Cart
 		return Pos( nx, ny );
 	}
 
-	Dir next_direction( char moved_to ) const
+	pair< Dir, size_t > next_direction( char moved_to ) const
 	{
+		Dir nxt_d = d;
+		size_t nxt_turn = turn;
+
 		switch( moved_to )
 		{
-		case '/':
+		case '/' :
+			switch( d )
+			{
+			case Dir::u : nxt_d = Dir::r; break;
+			case Dir::d : nxt_d = Dir::l; break;
+			case Dir::l : nxt_d = Dir::d; break;
+			case Dir::r : nxt_d = Dir::u; break;
+			default: break;
+			}
 			break;
 
-		case '\\':
-			break;
+		case '\\' :
+			switch( d )
+			{
+			case Dir::u : nxt_d = Dir::l; break;
+			case Dir::d : nxt_d = Dir::r; break;
+			case Dir::l : nxt_d = Dir::u; break;
+			case Dir::r : nxt_d = Dir::d; break;
+			default: break;
+			}
+		break;
 
-		case '+':
+		case '+' :
 			break;
 
 		default:
 			break;
 		}
 
-		return Dir::u;
+		return pair< Dir, size_t >( nxt_d, nxt_turn );
 	}
 
 	Pos move( const TracksVector& tracks )
 	{
-		Pos nxt = next_pos();
-		x = nxt.first;
-		y = nxt.second;
+		Pos nxt_p = next_pos();
+		x = nxt_p.first;
+		y = nxt_p.second;
 
 		assert( y < tracks.size() );
 		assert( x < tracks[ y ].size() );
 
-		const Dir nxt_d = next_direction( tracks[ y ][ x ] );
-		d = nxt_d;
+		const pair< Dir, size_t > nxt_d = next_direction( tracks[ y ][ x ] );
+		d = nxt_d.first;
+		turn = nxt_d.second;
 		
-		return nxt;
+		return nxt_p;
 	}
 
 };
