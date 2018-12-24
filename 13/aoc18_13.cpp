@@ -3,6 +3,8 @@
 #include <string>
 #include <cassert>
 #include <fstream>
+#include <memory>
+#include <algorithm>
 using namespace std;
 
 
@@ -24,7 +26,7 @@ int main( int argc, char* argv[] )
 	}
 
 	vector< string > tracks;
-	vector< Cart > carts;
+	vector< unique_ptr< Cart > > carts;
 
 	ifstream file( argv[ 1 ] );
 	if( file.is_open() )
@@ -41,19 +43,19 @@ int main( int argc, char* argv[] )
 				switch( c )
 				{
 				case '^':
-					carts.emplace_back( Cart{ x, y, Dtn::u } );
+					carts.emplace_back( make_unique< Cart >( Cart{ x, y, Dtn::u } ) );
 					line[ x ] = '|';
 					break;
 				case 'v':
-					carts.emplace_back( Cart{ x, y, Dtn::d } );
+					carts.emplace_back( make_unique< Cart >( Cart{ x, y, Dtn::d } ) );
 					line[ x ] = '|';
 					break;
 				case '<':
-					carts.emplace_back( Cart{ x, y, Dtn::l } );
+					carts.emplace_back( make_unique< Cart >( Cart{ x, y, Dtn::l } ) );
 					line[ x ] = '-';
 					break;
 				case '>':
-					carts.emplace_back( Cart{ x, y, Dtn::r } );
+					carts.emplace_back( make_unique< Cart >( Cart{ x, y, Dtn::r } ) );
 					line[ x ] = '-';
 					break;
 				default:
