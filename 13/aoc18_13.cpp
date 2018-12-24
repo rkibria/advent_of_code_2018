@@ -198,19 +198,28 @@ int main( int argc, char* argv[] )
 
 	cout << "carts: " << carts.size() << endl;
 
-	sort( carts.begin(), carts.end(),
-		[]( const unique_ptr< Cart >& a, const unique_ptr< Cart >& b ) { return a->y < b->y; } );
-
-	set< Pos > cart_posns;
-	for( size_t i = 0; i < carts.size(); ++i )
+	bool collision = false;
+	while( !collision )
 	{
-		auto& crt = carts[ i ];
+		sort( carts.begin(), carts.end(),
+			[]( const unique_ptr< Cart >& a, const unique_ptr< Cart >& b ) { return a->y < b->y; } );
 
-		Pos nxt = crt->move( tracks );
+		set< Pos > cart_posns;
+		for( size_t i = 0; i < carts.size(); ++i )
+		{
+			auto& crt = carts[ i ];
+			const auto nxt = crt->move( tracks );
 
-		cart_posns.insert( nxt );
+			if( cart_posns.find( nxt ) != cart_posns.end() )
+			{
+				cout << "1) first collision at " << nxt.first << "," << nxt.second << endl;
+				collision = true;
+				break;
+			}
+			else
+				cart_posns.insert( nxt );
+		}
 
-		cout << nxt.first << "," << nxt.second << endl;
 	}
 
 	return 0;
