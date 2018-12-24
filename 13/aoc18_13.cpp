@@ -76,7 +76,10 @@ int main( int argc, char* argv[] )
 	for( auto& s : tracks ) cout << s << endl;
 
 	cout << "carts: " << carts.size() << endl;
-	
+
+	sort( carts.begin(), carts.end(),
+		[]( const unique_ptr< Cart >& a, const unique_ptr< Cart >& b ) { return a->y < b->y; } );
+
 	return 0;
 }
 
