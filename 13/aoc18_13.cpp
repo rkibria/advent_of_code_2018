@@ -105,6 +105,7 @@ struct Cart
 				case Dir::r : nxt_d = Dir::d; break;
 				default: break;
 				}
+				cout << "*\n";
 				nxt_t = Turn::l;
 				break;
 			default:
@@ -122,6 +123,7 @@ struct Cart
 	Pos move( const TracksVector& tracks )
 	{
 		const auto nxt_p = next_pos();
+		cout << "move " << x << "," << y << " to " << nxt_p.first << "," << nxt_p.second << endl;
 		x = nxt_p.first;
 		y = nxt_p.second;
 
@@ -219,7 +221,10 @@ int main( int argc, char* argv[] )
 		print();
 
 		sort( carts.begin(), carts.end(),
-			[]( const unique_ptr< Cart >& a, const unique_ptr< Cart >& b ) { return a->y < b->y; } );
+			[]( const unique_ptr< Cart >& a, const unique_ptr< Cart >& b )
+			{
+				return ( a->y < b->y ) || ( a->y == b->y && a->x < b->x );
+			});
 
 		set< Pos > cart_posns;
 		for( size_t i = 0; i < carts.size(); ++i )
