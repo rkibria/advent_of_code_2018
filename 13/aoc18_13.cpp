@@ -5,7 +5,6 @@
 #include <fstream>
 #include <memory>
 #include <algorithm>
-#include <set>
 using namespace std;
 
 using Pos = pair< size_t, size_t >;
@@ -105,7 +104,6 @@ struct Cart
 				case Dir::r : nxt_d = Dir::d; break;
 				default: break;
 				}
-				cout << "*\n";
 				nxt_t = Turn::l;
 				break;
 			default:
@@ -123,7 +121,6 @@ struct Cart
 	Pos move( const TracksVector& tracks )
 	{
 		const auto nxt_p = next_pos();
-		cout << "move " << x << "," << y << " to " << nxt_p.first << "," << nxt_p.second << endl;
 		x = nxt_p.first;
 		y = nxt_p.second;
 
@@ -226,20 +223,21 @@ int main( int argc, char* argv[] )
 				return ( a->y < b->y ) || ( a->y == b->y && a->x < b->x );
 			});
 
-		set< Pos > cart_posns;
 		for( size_t i = 0; i < carts.size(); ++i )
 		{
 			auto& crt = carts[ i ];
 			const auto nxt = crt->move( tracks );
-
-			if( cart_posns.find( nxt ) != cart_posns.end() )
+			for( size_t j = 0; j < carts.size(); ++j )
 			{
-				cout << "1) first collision at " << nxt.first << "," << nxt.second << endl;
-				collision = true;
-				break;
+				if( i == j )
+					continue;
+				if( carts[ j ]->x == nxt.first && carts[ j ]->y == nxt.second )
+				{
+					cout << "1) first collision at " << nxt.first << "," << nxt.second << endl;
+					collision = true;
+					break;
+				}
 			}
-			else
-				cart_posns.insert( nxt );
 		}
 
 	}
