@@ -121,14 +121,14 @@ struct Cart
 
 	Pos move( const TracksVector& tracks )
 	{
-		Pos nxt_p = next_pos();
+		const auto nxt_p = next_pos();
 		x = nxt_p.first;
 		y = nxt_p.second;
 
 		assert( y < tracks.size() );
 		assert( x < tracks[ y ].size() );
 
-		const pair< Dir, Turn > nxt_d = next_direction( tracks[ y ][ x ] );
+		const auto nxt_d = next_direction( tracks[ y ][ x ] );
 		d = nxt_d.first;
 		t = nxt_d.second;
 		
@@ -194,13 +194,30 @@ int main( int argc, char* argv[] )
 		return -1;
 	}
 
-	for( auto& s : tracks ) cout << s << endl;
+	auto print = [ &tracks, &carts ]() {
+			auto tt = tracks;
+			for( const auto& c : carts )
+			{
+				switch( c->d )
+				{
+				case Dir::u : tt[ c->y ][ c->x ] = '^'; break;
+				case Dir::d : tt[ c->y ][ c->x ] = 'v'; break;
+				case Dir::l : tt[ c->y ][ c->x ] = '<'; break;
+				case Dir::r : tt[ c->y ][ c->x ] = '>'; break;
+				default: break;
+				}
+			}
+			for( const auto& s : tt ) cout << s << endl;
+			cout << endl;
+		};
 
 	cout << "carts: " << carts.size() << endl;
 
 	bool collision = false;
 	while( !collision )
 	{
+		print();
+
 		sort( carts.begin(), carts.end(),
 			[]( const unique_ptr< Cart >& a, const unique_ptr< Cart >& b ) { return a->y < b->y; } );
 
