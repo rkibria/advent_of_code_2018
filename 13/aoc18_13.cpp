@@ -5,6 +5,7 @@
 #include <fstream>
 #include <memory>
 #include <algorithm>
+#include <tuple>
 using namespace std;
 
 
@@ -12,8 +13,39 @@ enum class Dtn { u, d, l, r };
 
 struct Cart
 {
-	size_t x, y;
+	size_t x, y, turn;
 	Dtn d;
+
+	tuple< size_t, size_t > next_pos() const
+	{
+		size_t nx, ny;
+		switch( d )
+		{
+		case Dtn::u:
+			assert( y > 0 );
+			nx = x;
+			ny = y - 1;
+			break;
+		case Dtn::d:
+			nx = x;
+			ny = y + 1;
+			break;
+		case Dtn::l:
+			assert( x > 0 );
+			nx = x - 1;
+			ny = y;
+			break;
+		case Dtn::r:
+			nx = x + 1;
+			ny = y;
+			break;
+
+		default:
+			break;
+		}
+		return make_tuple( nx, ny );
+	}
+
 };
 
 
@@ -43,19 +75,19 @@ int main( int argc, char* argv[] )
 				switch( c )
 				{
 				case '^':
-					carts.emplace_back( make_unique< Cart >( Cart{ x, y, Dtn::u } ) );
+					carts.emplace_back( make_unique< Cart >( Cart{ x, y, 0, Dtn::u } ) );
 					line[ x ] = '|';
 					break;
 				case 'v':
-					carts.emplace_back( make_unique< Cart >( Cart{ x, y, Dtn::d } ) );
+					carts.emplace_back( make_unique< Cart >( Cart{ x, y, 0, Dtn::d } ) );
 					line[ x ] = '|';
 					break;
 				case '<':
-					carts.emplace_back( make_unique< Cart >( Cart{ x, y, Dtn::l } ) );
+					carts.emplace_back( make_unique< Cart >( Cart{ x, y, 0, Dtn::l } ) );
 					line[ x ] = '-';
 					break;
 				case '>':
-					carts.emplace_back( make_unique< Cart >( Cart{ x, y, Dtn::r } ) );
+					carts.emplace_back( make_unique< Cart >( Cart{ x, y, 0, Dtn::r } ) );
 					line[ x ] = '-';
 					break;
 				default:
@@ -79,6 +111,18 @@ int main( int argc, char* argv[] )
 
 	sort( carts.begin(), carts.end(),
 		[]( const unique_ptr< Cart >& a, const unique_ptr< Cart >& b ) { return a->y < b->y; } );
+
+
+
+	for( size_t i = 0; i < carts.size(); ++i )
+	{
+		auto& crt = carts[ i ];
+
+		size_t nx, ny;
+		tie( nx, ny ) = crt->next_pos();
+
+		cout << crt->x << "," << crt->y << " to " << nx << "," << ny << endl;
+	}
 
 	return 0;
 }
