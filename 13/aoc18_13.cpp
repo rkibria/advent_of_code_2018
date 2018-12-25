@@ -213,28 +213,26 @@ int main( int argc, char* argv[] )
 			cout << endl;
 		};
 
-	auto num_ok = [ &carts ]() {
-			return count_if( carts.begin(), carts.end(),
-				[]( const auto& c ) { return c->ok; } );
+	auto cart_ok = []( const auto& c ) { return c->ok; }; 
+
+	auto num_ok = [ &carts, &cart_ok ]() {
+			return count_if( carts.begin(), carts.end(), cart_ok );
 		};
 
 	cout << "carts: " << num_ok() << endl;
 
-	bool done = false;
-	while( !done )
+	while( true )
 	{
 		print();
 
 		if( num_ok() <= 1 )
 		{
-			for( auto& crt : carts )
-				if( crt->ok )
-				{
-					cout << "2) last remaining cart: " 
-						<< crt->x << "," << crt->y << endl;
-					break;
-				}
-			done = true;
+			const auto& last = find_if( carts.begin(), carts.end(), cart_ok );
+			if( last != carts.end() )
+			{
+				cout << "2) last remaining cart: " 
+					<< ( *last )->x << "," << ( *last )->y << endl;
+			}
 			break;
 		}
 
