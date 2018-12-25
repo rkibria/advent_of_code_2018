@@ -16,8 +16,9 @@ enum class Turn { l, s, r };
 struct Cart
 {
 	size_t x, y;
-	Turn t;
 	Dir d;
+	Turn t{ Turn::l };
+	bool ok{ true };
 
 	Pos next_pos() const
 	{
@@ -163,19 +164,19 @@ int main( int argc, char* argv[] )
 				switch( c )
 				{
 				case '^':
-					carts.emplace_back( make_unique< Cart >( Cart{ x, y, Turn::l, Dir::u } ) );
+					carts.emplace_back( make_unique< Cart >( Cart{ x, y, Dir::u } ) );
 					line[ x ] = '|';
 					break;
 				case 'v':
-					carts.emplace_back( make_unique< Cart >( Cart{ x, y, Turn::l, Dir::d } ) );
+					carts.emplace_back( make_unique< Cart >( Cart{ x, y, Dir::d } ) );
 					line[ x ] = '|';
 					break;
 				case '<':
-					carts.emplace_back( make_unique< Cart >( Cart{ x, y, Turn::l, Dir::l } ) );
+					carts.emplace_back( make_unique< Cart >( Cart{ x, y, Dir::l } ) );
 					line[ x ] = '-';
 					break;
 				case '>':
-					carts.emplace_back( make_unique< Cart >( Cart{ x, y, Turn::l, Dir::r } ) );
+					carts.emplace_back( make_unique< Cart >( Cart{ x, y, Dir::r } ) );
 					line[ x ] = '-';
 					break;
 				default:
@@ -197,6 +198,8 @@ int main( int argc, char* argv[] )
 			auto tt = tracks;
 			for( const auto& c : carts )
 			{
+				if( !c->ok )
+					continue;
 				switch( c->d )
 				{
 				case Dir::u : tt[ c->y ][ c->x ] = '^'; break;
@@ -210,31 +213,59 @@ int main( int argc, char* argv[] )
 			cout << endl;
 		};
 
-	cout << "carts: " << carts.size() << endl;
+	auto num_ok = [ &carts ]() {
+			return count_if( carts.begin(), carts.end(),
+				[]( const auto& c ) { return c->ok; } );
+		};
 
-	bool collision = false;
-	while( !collision )
+	cout << "carts: " << num_ok() << endl;
+
+	bool done = false;
+	while( !done )
 	{
 		print();
+
+		if( num_ok() <= 1 )
+		{
+			for( auto& crt : carts )
+				if( crt->ok )
+				{
+					cout << "2) last remaining cart: " 
+						<< crt->x << "," << crt->y << endl;
+					break;
+				}
+			done = true;
+			break;
+		}
 
 		sort( carts.begin(), carts.end(),
 			[]( const unique_ptr< Cart >& a, const unique_ptr< Cart >& b )
 			{
 				return ( a->y < b->y ) || ( a->y == b->y && a->x < b->x );
 			});
-
+	
 		for( size_t i = 0; i < carts.size(); ++i )
 		{
 			auto& crt = carts[ i ];
+			if( !crt->ok )
+				continue;
+
 			const auto nxt = crt->move( tracks );
+			
 			for( size_t j = 0; j < carts.size(); ++j )
 			{
 				if( i == j )
 					continue;
-				if( carts[ j ]->x == nxt.first && carts[ j ]->y == nxt.second )
+
+				auto& crt2 = carts[ j ];
+				if( !crt2->ok )
+					continue;
+
+				if( crt2->x == nxt.first && crt2->y == nxt.second )
 				{
-					cout << "1) first collision at " << nxt.first << "," << nxt.second << endl;
-					collision = true;
+					cout << "1) collision at " << nxt.first << "," << nxt.second << endl;
+					crt->ok = false;
+					crt2->ok = false;
 					break;
 				}
 			}
