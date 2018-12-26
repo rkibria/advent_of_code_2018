@@ -34,6 +34,7 @@ int main( int argc, char* argv[] ) {
 				recipes.push_back( 1 );
 			}
 			recipes.push_back( sum % 10 );
+			return ( sum > 9 );
 		};
 	
 	auto advance_elf = [ &recipes ]( auto itr, size_t steps ) {
@@ -51,9 +52,9 @@ int main( int argc, char* argv[] ) {
 			elf_2 = advance_elf( elf_2, 1 + *elf_2 );
 		};
 
-	const size_t num_recipes = 51589; // 864801;
+	const size_t num_recipes = 864801;
 
-/*	init();
+	init();
 	while( true ) {
 		create();
 		advance();
@@ -72,34 +73,30 @@ int main( int argc, char* argv[] ) {
 			break;
 		}
 	}
-*/
 	
 	list< int > target;
-	// 01245 51589 92510 59414
-	target.push_back( 5 );
-	target.push_back( 9 );
+	target.push_back( 8 );
+	target.push_back( 6 );
 	target.push_back( 4 );
+	target.push_back( 8 );
+	target.push_back( 0 );
 	target.push_back( 1 );
-	target.push_back( 4 );
 	
 	init();
 	while( true ) {
-		create();
+		const auto two_created = create();
 		advance();
 
-		//print();
-
-		bool found = false;
-		found = equal( target.crbegin(), target.crend(), recipes.crbegin() );
-
-		if( found ) {
-			print();
-			//recipes.erase( ++itr, recipes.cend() );
+		if( equal( target.crbegin(), target.crend(), recipes.crbegin() ) ) {
 			cout << "2) recipes to the left of the input sequence: "
 				<< ( recipes.size() - target.size() ) << endl;
 			break;
 		}
-
+		else if( two_created && equal( target.crbegin(), target.crend(), ++recipes.crbegin() ) ) {
+			cout << "2) recipes to the left of the input sequence: "
+				<< ( recipes.size() - 1 - target.size() ) << endl;
+			break;
+		}
 	}
 
 }
