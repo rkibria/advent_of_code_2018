@@ -46,9 +46,11 @@ int main( int argc, char* argv[] ) {
 
 	print();
 
-	create();
-	advance();
-	print();
+	for( size_t i = 0; i < 10; ++i ) {
+		create();
+		advance();
+		print();
+	}
 
 }
 
