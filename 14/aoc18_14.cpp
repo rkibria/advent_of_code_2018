@@ -44,12 +44,28 @@ int main( int argc, char* argv[] ) {
 			elf_2 = advance_elf( elf_2, 1 + *elf_2 );
 		};
 
+	const size_t num_recipes = 9;
+
 	print();
 
-	for( size_t i = 0; i < 10; ++i ) {
+	for( size_t i = 0; i < 1000; ++i ) {
 		create();
 		advance();
 		print();
+		
+		if( num_recipes + 10 <= recipes.size() ) {
+			cout << "1) scores of ten recipes after " << num_recipes << " recipes: ";
+			auto itr = recipes.end();
+			for( size_t j = 0; j < 10; ++j ) {
+				--itr;
+			}
+			for( size_t j = 0; j < 10; ++j ) {
+				cout << *( itr++ );
+			}
+			cout << endl;
+
+			break;
+		}
 	}
 
 }
