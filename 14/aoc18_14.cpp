@@ -75,29 +75,29 @@ int main( int argc, char* argv[] ) {
 	}
 	
 	list< int > target;
-	target.push_back( 8 );
-	target.push_back( 6 );
-	target.push_back( 4 );
-	target.push_back( 8 );
-	target.push_back( 0 );
-	target.push_back( 1 );
-	
+
+	auto rem = num_recipes;
+	while( rem > 0 ) {
+		target.push_front( rem % 10 );
+		rem /= 10;
+	}
+
 	init();
+	size_t result_2 = 0;
 	while( true ) {
 		const auto two_created = create();
 		advance();
 
 		if( equal( target.crbegin(), target.crend(), recipes.crbegin() ) ) {
-			cout << "2) recipes to the left of the input sequence: "
-				<< ( recipes.size() - target.size() ) << endl;
+			result_2 = recipes.size() - target.size();
 			break;
 		}
 		else if( two_created && equal( target.crbegin(), target.crend(), ++recipes.crbegin() ) ) {
-			cout << "2) recipes to the left of the input sequence: "
-				<< ( recipes.size() - 1 - target.size() ) << endl;
+			result_2 = recipes.size() - 1 - target.size();
 			break;
 		}
 	}
+	cout << "2) recipes to the left of the input sequence: " << result_2 << endl;
 
 }
 
