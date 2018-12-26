@@ -29,7 +29,7 @@ int main( int argc, char* argv[] ) {
 			recipes.push_back( sum % 10 );
 		};
 	
-	auto advance = [ &recipes ]( auto itr, size_t steps ) {
+	auto advance_elf = [ &recipes ]( auto itr, size_t steps ) {
 			for( size_t i = 0; i < steps; ++i ) {
 				++itr;
 				if( itr == recipes.end() ) {
@@ -38,12 +38,16 @@ int main( int argc, char* argv[] ) {
 			}
 			return itr;
 		};
-		
+	
+	auto advance = [ &recipes, &elf_1, &elf_2, &advance_elf ]() {
+			elf_1 = advance_elf( elf_1, 1 + *elf_1 );
+			elf_2 = advance_elf( elf_2, 1 + *elf_2 );
+		};
+
 	print();
 
 	create();
-	elf_1 = advance( elf_1, 1 + *elf_1 );
-	elf_2 = advance( elf_2, 1 + *elf_2 );
+	advance();
 	print();
 
 }
