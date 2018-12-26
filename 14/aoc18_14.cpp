@@ -44,14 +44,14 @@ int main( int argc, char* argv[] ) {
 			elf_2 = advance_elf( elf_2, 1 + *elf_2 );
 		};
 
-	const size_t num_recipes = 9;
+	const size_t num_recipes = 864801;
 
-	print();
+	// print();
 
-	for( size_t i = 0; i < 1000; ++i ) {
+	while( true ) {
 		create();
 		advance();
-		print();
+		// print();
 		
 		if( num_recipes + 10 <= recipes.size() ) {
 			cout << "1) scores of ten recipes after " << num_recipes << " recipes: ";
