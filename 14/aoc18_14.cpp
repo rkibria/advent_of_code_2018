@@ -5,10 +5,16 @@ using namespace std;
 
 int main( int argc, char* argv[] ) {
 	list< int > recipes;
-
-	auto elf_1 = recipes.emplace( recipes.end(), 3 );
-	auto elf_2 = recipes.emplace( recipes.end(), 7 );
 	
+	auto elf_1 = recipes.end();
+	auto elf_2 = recipes.end();
+
+	auto init = [ &recipes, &elf_1, &elf_2 ]() {
+			recipes.clear();
+			elf_1 = recipes.emplace( recipes.end(), 3 );
+			elf_2 = recipes.emplace( recipes.end(), 7 );
+		};
+
 	auto print = [ &recipes, &elf_1, &elf_2 ]() {
 			for( auto i = recipes.begin(); i != recipes.end(); ++i ) {
 				cout << ( ( i == elf_1 ) ? "(" : "" );
@@ -16,7 +22,7 @@ int main( int argc, char* argv[] ) {
 				cout << *i;
 				cout << ( ( i == elf_2 ) ? "]" : "" );
 				cout << ( ( i == elf_1 ) ? ")" : "" );
-				cout << " ";
+				cout << " \n";
 			}
 			cout << endl;
 		};
@@ -44,14 +50,12 @@ int main( int argc, char* argv[] ) {
 			elf_2 = advance_elf( elf_2, 1 + *elf_2 );
 		};
 
-	const size_t num_recipes = 864801;
+	const size_t num_recipes = 4801; // 864801;
 
-	// print();
-
+/*	init();
 	while( true ) {
 		create();
 		advance();
-		// print();
 		
 		if( num_recipes + 10 <= recipes.size() ) {
 			cout << "1) scores of ten recipes after " << num_recipes << " recipes: ";
@@ -66,6 +70,40 @@ int main( int argc, char* argv[] ) {
 
 			break;
 		}
+	}
+*/
+	init();
+	while( true ) {
+		create();
+		advance();
+
+		//print();
+
+		auto remaining = static_cast< int >( num_recipes );
+		auto itr = recipes.cend();
+		--itr;
+		while( remaining > 0 ) {
+			const auto digit = remaining % 10;
+
+			if( digit != *itr ) {
+				remaining = num_recipes;
+				break;
+			}
+
+			if( itr == recipes.cbegin() )
+				break;
+			
+			remaining /= 10;
+			--itr;
+		}
+
+		if( remaining == 0 ) {
+			print();
+			recipes.erase( ++itr, recipes.cend() );
+			cout << "2) " << recipes.size() << endl;
+			break;
+		}
+
 	}
 
 }
