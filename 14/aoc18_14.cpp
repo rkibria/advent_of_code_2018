@@ -11,15 +11,12 @@ int main( int argc, char* argv[] ) {
 	
 	auto print = [ &recipes, &elf_1, &elf_2 ]() {
 			for( auto i = recipes.begin(); i != recipes.end(); ++i ) {
-				if( i == elf_1 ) {
-					cout << "(" << *i << ") ";
-				}
-				else if( i == elf_2 ) {
-					cout << "[" << *i << "] ";
-				}
-				else {
-					cout << *i << " ";
-				}
+				cout << ( ( i == elf_1 ) ? "(" : "" );
+				cout << ( ( i == elf_2 ) ? "[" : "" );
+				cout << *i;
+				cout << ( ( i == elf_2 ) ? "]" : "" );
+				cout << ( ( i == elf_1 ) ? ")" : "" );
+				cout << " ";
 			}
 			cout << endl;
 		};
@@ -31,9 +28,22 @@ int main( int argc, char* argv[] ) {
 			}
 			recipes.push_back( sum % 10 );
 		};
-
+	
+	auto advance = [ &recipes ]( auto itr, size_t steps ) {
+			for( size_t i = 0; i < steps; ++i ) {
+				++itr;
+				if( itr == recipes.end() ) {
+					itr = recipes.begin();
+				}
+			}
+			return itr;
+		};
+		
 	print();
+
 	create();
+	elf_1 = advance( elf_1, 1 + *elf_1 );
+	elf_2 = advance( elf_2, 1 + *elf_2 );
 	print();
 
 }
