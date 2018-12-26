@@ -24,6 +24,16 @@ int main( int argc, char* argv[] ) {
 			cout << endl;
 		};
 
+	auto create = [ &recipes, &elf_1, &elf_2 ]() {
+			const auto sum = *elf_1 + *elf_2;
+			if( sum > 9 ) {
+				recipes.push_back( 1 );
+			}
+			recipes.push_back( sum % 10 );
+		};
+
+	print();
+	create();
 	print();
 
 }
