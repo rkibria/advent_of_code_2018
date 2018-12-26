@@ -1,6 +1,7 @@
 #include <iostream>
 #include <cassert>
 #include <list>
+#include <algorithm>
 using namespace std;
 
 int main( int argc, char* argv[] ) {
@@ -22,7 +23,7 @@ int main( int argc, char* argv[] ) {
 				cout << *i;
 				cout << ( ( i == elf_2 ) ? "]" : "" );
 				cout << ( ( i == elf_1 ) ? ")" : "" );
-				cout << " \n";
+				cout << " ";
 			}
 			cout << endl;
 		};
@@ -50,7 +51,7 @@ int main( int argc, char* argv[] ) {
 			elf_2 = advance_elf( elf_2, 1 + *elf_2 );
 		};
 
-	const size_t num_recipes = 4801; // 864801;
+	const size_t num_recipes = 51589; // 864801;
 
 /*	init();
 	while( true ) {
@@ -72,6 +73,15 @@ int main( int argc, char* argv[] ) {
 		}
 	}
 */
+	
+	list< int > target;
+	// 01245 51589 92510 59414
+	target.push_back( 5 );
+	target.push_back( 9 );
+	target.push_back( 4 );
+	target.push_back( 1 );
+	target.push_back( 4 );
+	
 	init();
 	while( true ) {
 		create();
@@ -79,28 +89,14 @@ int main( int argc, char* argv[] ) {
 
 		//print();
 
-		auto remaining = static_cast< int >( num_recipes );
-		auto itr = recipes.cend();
-		--itr;
-		while( remaining > 0 ) {
-			const auto digit = remaining % 10;
+		bool found = false;
+		found = equal( target.crbegin(), target.crend(), recipes.crbegin() );
 
-			if( digit != *itr ) {
-				remaining = num_recipes;
-				break;
-			}
-
-			if( itr == recipes.cbegin() )
-				break;
-			
-			remaining /= 10;
-			--itr;
-		}
-
-		if( remaining == 0 ) {
+		if( found ) {
 			print();
-			recipes.erase( ++itr, recipes.cend() );
-			cout << "2) " << recipes.size() << endl;
+			//recipes.erase( ++itr, recipes.cend() );
+			cout << "2) recipes to the left of the input sequence: "
+				<< ( recipes.size() - target.size() ) << endl;
 			break;
 		}
 
