@@ -30,10 +30,12 @@ struct Fighter {
 using FighterContainer = std::vector<std::unique_ptr<Fighter>>;
 using ArenaContainer = std::vector<std::string>;
 
-struct World {
+class World {
 	ArenaContainer arena;
 	FighterContainer fighters;
 
+public:
+	void load(const char*);
 	void sort_fighters();
 	auto to_string() const;
 };
@@ -50,18 +52,20 @@ void World::sort_fighters() {
 
 auto World::to_string() const {
 	auto arn = arena;
-	for(const auto& f : fighters) {
-		arn[f->pos.second][f->pos.first] = (f->race == Race::elf) ? C_ELF : C_GOBLIN;
-	}
 	std::stringstream ss;
+
+	ss << fighters.size() << " fighters:" << std::endl;
+	for(const auto& f : fighters) {
+		const auto f_ch = (f->race == Race::elf) ? C_ELF : C_GOBLIN;
+		arn[f->pos.second][f->pos.first] = f_ch;
+		ss << f_ch << " " << f->pos.first << "," << f->pos.second << std::endl;
+	}
 	for(const auto& s : arn)
 		ss << s << std::endl;
 	return ss.str();
 }
 
-auto parse_file(const char* input_file) {
-	World world;
-
+void World::load(const char* input_file) {
 	std::ifstream file;
 	file.open(input_file);
 	if(!file)
@@ -73,8 +77,8 @@ auto parse_file(const char* input_file) {
 			continue;
 
 		std::string arena_row;
-		auto current_pos = [ &world, &arena_row ]() {
-			return Pos(arena_row.size(), world.arena.size());
+		auto current_pos = [ this, &arena_row ]() {
+			return Pos(arena_row.size(), arena.size());
 			};
 
 		for(auto c : line) {
@@ -85,14 +89,14 @@ auto parse_file(const char* input_file) {
 				break;
 
 			case C_ELF:
-				world.fighters.emplace_back(
+				fighters.emplace_back(
 					std::make_unique<Fighter>(
 						Fighter{current_pos(), Race::elf}));
 				arena_row.push_back(C_EMPTY);
 				break;
 
 			case C_GOBLIN:
-				world.fighters.emplace_back(
+				fighters.emplace_back(
 					std::make_unique<Fighter>(
 						Fighter{current_pos(), Race::goblin}));
 				arena_row.push_back(C_EMPTY);
@@ -103,14 +107,12 @@ auto parse_file(const char* input_file) {
 				break;
 			}
 		}
-		if(!world.arena.empty() && world.arena.back().size() != arena_row.size()) {
+		if(!arena.empty() && arena.back().size() != arena_row.size()) {
 			throw std::runtime_error("Input lines must all be equal length");
 		}
-		world.arena.push_back(arena_row);
+		arena.push_back(arena_row);
 	}
 	file.close();
-
-	return world;
 }
 
 int main(int argc, char* argv[]) {
@@ -119,15 +121,13 @@ int main(int argc, char* argv[]) {
 		return -1;
 	}
 
-	auto world = parse_file(argv[1]);
+	World world;
+	world.load(argv[1]);
+	
+	world.sort_fighters();
 
 	std::clog << world.to_string() << std::endl;
 
-	std::clog << "fighters: " << world.fighters.size() << std::endl;
-	world.sort_fighters();
-	for(const auto& f : world.fighters) {
-		std::clog << f->pos.first << "," << f->pos.second << std::endl;
-	}
 	return 0;
 }
 
