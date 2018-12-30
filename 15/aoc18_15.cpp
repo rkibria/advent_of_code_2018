@@ -34,8 +34,19 @@ struct World {
 	ArenaContainer arena;
 	FighterContainer fighters;
 
+	void sort_fighters();
 	auto to_string() const;
 };
+
+void World::sort_fighters() {
+	std::sort(fighters.begin(), fighters.end(),
+		[](const std::unique_ptr<Fighter>& a,
+			const std::unique_ptr<Fighter>& b) {
+				return a->pos.second < b->pos.second
+				|| (a->pos.second == b->pos.second
+					&& a->pos.first < b->pos.first);
+			});
+}
 
 auto World::to_string() const {
 	auto arn = arena;
@@ -72,18 +83,21 @@ auto parse_file(const char* input_file) {
 			case C_WALL:
 				arena_row.push_back(c);
 				break;
+
 			case C_ELF:
 				world.fighters.emplace_back(
 					std::make_unique<Fighter>(
 						Fighter{current_pos(), Race::elf}));
 				arena_row.push_back(C_EMPTY);
-			break;
+				break;
+
 			case C_GOBLIN:
 				world.fighters.emplace_back(
 					std::make_unique<Fighter>(
 						Fighter{current_pos(), Race::goblin}));
 				arena_row.push_back(C_EMPTY);
 				break;
+
 			default:
 				throw std::runtime_error("Read invalid input character");
 				break;
@@ -101,7 +115,7 @@ auto parse_file(const char* input_file) {
 
 int main(int argc, char* argv[]) {
 	if(argc < 2) {
-		std::cout << "Usage: " << argv[0] << " <input file>\n";
+		std::cout << "Usage: " << argv[0] << " <input file>" << std::endl;
 		return -1;
 	}
 
@@ -110,17 +124,9 @@ int main(int argc, char* argv[]) {
 	std::clog << world.to_string() << std::endl;
 
 	std::clog << "fighters: " << world.fighters.size() << std::endl;
-
-	std::sort(world.fighters.begin(), world.fighters.end(),
-		[](const std::unique_ptr<Fighter>& a,
-			const std::unique_ptr<Fighter>& b) {
-				return a->pos.second < b->pos.second
-				|| (a->pos.second == b->pos.second
-					&& a->pos.first < b->pos.first);
-			});
-
+	world.sort_fighters();
 	for(const auto& f : world.fighters) {
-		std::cout << f->pos.first << "," << f->pos.second << std::endl;
+		std::clog << f->pos.first << "," << f->pos.second << std::endl;
 	}
 	return 0;
 }
