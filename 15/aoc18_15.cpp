@@ -12,10 +12,12 @@ using Pos = pair<size_t, size_t>;
 
 enum class Race {Elf, Goblin};
 
+const int ATTACK_POWER = 3;
+
 struct Fighter {
 	Pos pos;
 	Race race;
-	int hp;
+	int hp = 200;
 };
 
 using FighterContainer = vector<unique_ptr<Fighter>>;
@@ -29,24 +31,29 @@ FighterContainer parse_file(const char* input_file) {
 		throw runtime_error("Could not open input file");
 
 	string line;
+	size_t y_pos{0};
 	while(getline(file, line)) {
 		assert(!line.empty());
+		
+		size_t x_pos{0};
 		for(auto c : line) {
 			switch(c) {
 			case '.':
 			case '#':
 				break;
 			case 'E':
-				cout << "E" << endl;
+				fighters.emplace_back(make_unique<Fighter>(Fighter{Pos(x_pos, y_pos), Race::Elf}));
 				break;
 			case 'G':
-				cout << "G" << endl;
+				fighters.emplace_back(make_unique<Fighter>(Fighter{Pos(x_pos, y_pos), Race::Goblin}));
 				break;
 			default:
 				assert(false);
 				break;
 			}
+			++x_pos;
 		}
+		++y_pos;
 	}
 	file.close();
 
@@ -60,6 +67,7 @@ int main(int argc, char* argv[]) {
 	}
 
 	FighterContainer fighters = parse_file(argv[1]);
+	clog << "fighters: " << fighters.size() << endl;
 
 	return 0;
 }
