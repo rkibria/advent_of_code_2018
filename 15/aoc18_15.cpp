@@ -103,7 +103,7 @@ void World::load(const char* input_file) {
 				break;
 
 			default:
-				throw std::runtime_error("Read invalid input character");
+				throw std::runtime_error("Invalid input character");
 				break;
 			}
 		}
