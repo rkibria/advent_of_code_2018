@@ -5,6 +5,7 @@
 #include <fstream>
 #include <memory>
 #include <algorithm>
+#include <stdexcept>
 using namespace std;
 
 using Pos = pair<size_t, size_t>;
@@ -17,6 +18,40 @@ struct Fighter {
 	int hp;
 };
 
+using FighterContainer = vector<unique_ptr<Fighter>>;
+
+FighterContainer parse_file(const char* input_file) {
+	FighterContainer fighters;
+
+	ifstream file;
+	file.open(input_file);
+	if(!file)
+		throw runtime_error("Could not open input file");
+
+	string line;
+	while(getline(file, line)) {
+		assert(!line.empty());
+		for(auto c : line) {
+			switch(c) {
+			case '.':
+			case '#':
+				break;
+			case 'E':
+				cout << "E" << endl;
+				break;
+			case 'G':
+				cout << "G" << endl;
+				break;
+			default:
+				assert(false);
+				break;
+			}
+		}
+	}
+	file.close();
+
+	return fighters;
+}
 
 int main(int argc, char* argv[]) {
 	if( argc < 2 ) {
@@ -24,34 +59,7 @@ int main(int argc, char* argv[]) {
 		return -1;
 	}
 
-	ifstream file(argv[1]);
-	if(file.is_open()) {
-		string line;
-		while(getline(file, line)) {
-			assert(!line.empty());
-			for(auto c : line) {
-				switch(c) {
-				case '.':
-				case '#':
-					break;
-				case 'E':
-					cout << "E" << endl;
-					break;
-				case 'G':
-					cout << "G" << endl;
-					break;
-				default:
-					assert(false);
-					break;
-				}
-			}
-		}
-		file.close();
-	}
-	else{
-		cerr << "ERROR: could not open file" << endl;
-		return -1;
-	}
+	FighterContainer fighters = parse_file(argv[1]);
 
 	return 0;
 }
