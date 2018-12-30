@@ -103,10 +103,22 @@ int main(int argc, char* argv[]) {
 	}
 
 	auto world = parse_file(argv[1]);
+
+	std::clog << world.to_string() << std::endl;
+
 	std::clog << "fighters: " << world.fighters.size() << std::endl;
 
-	std::cout << world.to_string() << std::endl;
+	std::sort(world.fighters.begin(), world.fighters.end(),
+		[](const std::unique_ptr<Fighter>& a,
+			const std::unique_ptr<Fighter>& b) {
+				return a->pos.second < b->pos.second
+				|| (a->pos.second == b->pos.second
+					&& a->pos.first < b->pos.first);
+			});
 
+	for(const auto& f : world.fighters) {
+		std::cout << f->pos.first << "," << f->pos.second << std::endl;
+	}
 	return 0;
 }
 
