@@ -60,7 +60,7 @@ auto parse_file(const char* input_file) {
 	while(getline(file, line)) {
 		if(line.empty())
 			continue;
-		
+
 		std::string arena_row;
 		auto current_pos = [ &world, &arena_row ]() {
 			return Pos(arena_row.size(), world.arena.size());
@@ -89,7 +89,9 @@ auto parse_file(const char* input_file) {
 				break;
 			}
 		}
-		assert(world.arena.empty() || world.arena.back().size() == arena_row.size());
+		if(!world.arena.empty() && world.arena.back().size() != arena_row.size()) {
+			throw std::runtime_error("Input lines must all be equal length");
+		}
 		world.arena.push_back(arena_row);
 	}
 	file.close();
