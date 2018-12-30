@@ -6,9 +6,8 @@
 #include <memory>
 #include <algorithm>
 #include <stdexcept>
-using namespace std;
 
-using Pos = pair<size_t, size_t>;
+using Pos = std::pair<size_t, size_t>;
 
 enum class Race {Elf, Goblin};
 
@@ -20,54 +19,70 @@ struct Fighter {
 	int hp = 200;
 };
 
-using FighterContainer = vector<unique_ptr<Fighter>>;
+using FighterContainer = std::vector<std::unique_ptr<Fighter>>;
+using ArenaContainer = std::vector<std::string>;
 
-FighterContainer parse_file(const char* input_file) {
+struct World {
+	ArenaContainer arena;
 	FighterContainer fighters;
+};
 
-	ifstream file;
+auto parse_file(const char* input_file) {
+	World world;
+
+	std::ifstream file;
 	file.open(input_file);
 	if(!file)
-		throw runtime_error("Could not open input file");
+		throw std::runtime_error("Could not open input file");
 
-	string line;
-	size_t y_pos{0};
+	std::string line;
 	while(getline(file, line)) {
-		assert(!line.empty());
+		if(line.empty())
+			continue;
 		
-		size_t x_pos{0};
+		std::string arena_row;
+		auto current_pos = [ &world, &arena_row ]() {
+			return Pos(arena_row.size(), world.arena.size());
+			};
+
 		for(auto c : line) {
 			switch(c) {
 			case '.':
 			case '#':
+				arena_row.push_back(c);
 				break;
 			case 'E':
-				fighters.emplace_back(make_unique<Fighter>(Fighter{Pos(x_pos, y_pos), Race::Elf}));
-				break;
+				world.fighters.emplace_back(
+					std::make_unique<Fighter>(
+						Fighter{current_pos(), Race::Elf}));
+				arena_row.push_back('.');
+			break;
 			case 'G':
-				fighters.emplace_back(make_unique<Fighter>(Fighter{Pos(x_pos, y_pos), Race::Goblin}));
+				world.fighters.emplace_back(
+					std::make_unique<Fighter>(
+						Fighter{current_pos(), Race::Goblin}));
+				arena_row.push_back('.');
 				break;
 			default:
-				assert(false);
+				throw std::runtime_error("Read invalid input character");
 				break;
 			}
-			++x_pos;
 		}
-		++y_pos;
+		world.arena.push_back(arena_row);
 	}
 	file.close();
 
-	return fighters;
+	return world;
 }
 
 int main(int argc, char* argv[]) {
 	if( argc < 2 ) {
-		cout << "Usage: " << argv[0] << " <input file>" << endl;
+		std::cout << "Usage: " << argv[0] << " <input file>\n";
 		return -1;
 	}
 
-	FighterContainer fighters = parse_file(argv[1]);
-	clog << "fighters: " << fighters.size() << endl;
+	auto world = parse_file(argv[1]);
+	std::clog << "fighters: " << world.fighters.size() << "\n";
 
 	return 0;
 }
