@@ -6,17 +6,25 @@
 #include <memory>
 #include <algorithm>
 #include <stdexcept>
+#include <sstream>
 
 using Pos = std::pair<size_t, size_t>;
 
-enum class Race {Elf, Goblin};
+enum class Race {elf, goblin};
 
 const int ATTACK_POWER = 3;
+
+const auto CH_EMPTY = '.';
+const auto CH_WALL = '#';
+const auto CH_ELF = 'E';
+const auto CH_GOBLIN = 'G';
 
 struct Fighter {
 	Pos pos;
 	Race race;
 	int hp = 200;
+
+	bool alive() const {return hp > 0;}
 };
 
 using FighterContainer = std::vector<std::unique_ptr<Fighter>>;
@@ -25,7 +33,20 @@ using ArenaContainer = std::vector<std::string>;
 struct World {
 	ArenaContainer arena;
 	FighterContainer fighters;
+
+	auto to_string() const;
 };
+
+auto World::to_string() const {
+	auto arn = arena;
+	for(const auto& f : fighters) {
+		arn[f->pos.second][f->pos.first] = (f->race == Race::elf) ? CH_ELF : CH_GOBLIN;
+	}
+	std::stringstream ss;
+	for(const auto& s : arn)
+		ss << s << std::endl;
+	return ss.str();
+}
 
 auto parse_file(const char* input_file) {
 	World world;
@@ -47,21 +68,21 @@ auto parse_file(const char* input_file) {
 
 		for(auto c : line) {
 			switch(c) {
-			case '.':
-			case '#':
+			case CH_EMPTY:
+			case CH_WALL:
 				arena_row.push_back(c);
 				break;
-			case 'E':
+			case CH_ELF:
 				world.fighters.emplace_back(
 					std::make_unique<Fighter>(
-						Fighter{current_pos(), Race::Elf}));
-				arena_row.push_back('.');
+						Fighter{current_pos(), Race::elf}));
+				arena_row.push_back(CH_EMPTY);
 			break;
-			case 'G':
+			case CH_GOBLIN:
 				world.fighters.emplace_back(
 					std::make_unique<Fighter>(
-						Fighter{current_pos(), Race::Goblin}));
-				arena_row.push_back('.');
+						Fighter{current_pos(), Race::goblin}));
+				arena_row.push_back(CH_EMPTY);
 				break;
 			default:
 				throw std::runtime_error("Read invalid input character");
@@ -76,13 +97,15 @@ auto parse_file(const char* input_file) {
 }
 
 int main(int argc, char* argv[]) {
-	if( argc < 2 ) {
+	if(argc < 2) {
 		std::cout << "Usage: " << argv[0] << " <input file>\n";
 		return -1;
 	}
 
 	auto world = parse_file(argv[1]);
-	std::clog << "fighters: " << world.fighters.size() << "\n";
+	std::clog << "fighters: " << world.fighters.size() << std::endl;
+
+	std::cout << world.to_string() << std::endl;
 
 	return 0;
 }
