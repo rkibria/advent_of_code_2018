@@ -7,6 +7,17 @@
 #include <algorithm>
 using namespace std;
 
+using Pos = pair<size_t, size_t>;
+
+enum class Race {Elf, Goblin};
+
+struct Fighter {
+	Pos pos;
+	Race race;
+	int hp;
+};
+
+
 int main(int argc, char* argv[]) {
 	if( argc < 2 ) {
 		cout << "Usage: " << argv[0] << " <input file>" << endl;
