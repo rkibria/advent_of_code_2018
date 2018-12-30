@@ -89,6 +89,7 @@ auto parse_file(const char* input_file) {
 				break;
 			}
 		}
+		assert(world.arena.empty() || world.arena.back().size() == arena_row.size());
 		world.arena.push_back(arena_row);
 	}
 	file.close();
