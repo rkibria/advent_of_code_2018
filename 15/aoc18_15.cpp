@@ -14,10 +14,10 @@ enum class Race {elf, goblin};
 
 const int ATTACK_POWER = 3;
 
-const auto CH_EMPTY = '.';
-const auto CH_WALL = '#';
-const auto CH_ELF = 'E';
-const auto CH_GOBLIN = 'G';
+const auto C_EMPTY = '.';
+const auto C_WALL = '#';
+const auto C_ELF = 'E';
+const auto C_GOBLIN = 'G';
 
 struct Fighter {
 	Pos pos;
@@ -40,7 +40,7 @@ struct World {
 auto World::to_string() const {
 	auto arn = arena;
 	for(const auto& f : fighters) {
-		arn[f->pos.second][f->pos.first] = (f->race == Race::elf) ? CH_ELF : CH_GOBLIN;
+		arn[f->pos.second][f->pos.first] = (f->race == Race::elf) ? C_ELF : C_GOBLIN;
 	}
 	std::stringstream ss;
 	for(const auto& s : arn)
@@ -68,21 +68,21 @@ auto parse_file(const char* input_file) {
 
 		for(auto c : line) {
 			switch(c) {
-			case CH_EMPTY:
-			case CH_WALL:
+			case C_EMPTY:
+			case C_WALL:
 				arena_row.push_back(c);
 				break;
-			case CH_ELF:
+			case C_ELF:
 				world.fighters.emplace_back(
 					std::make_unique<Fighter>(
 						Fighter{current_pos(), Race::elf}));
-				arena_row.push_back(CH_EMPTY);
+				arena_row.push_back(C_EMPTY);
 			break;
-			case CH_GOBLIN:
+			case C_GOBLIN:
 				world.fighters.emplace_back(
 					std::make_unique<Fighter>(
 						Fighter{current_pos(), Race::goblin}));
-				arena_row.push_back(CH_EMPTY);
+				arena_row.push_back(C_EMPTY);
 				break;
 			default:
 				throw std::runtime_error("Read invalid input character");
