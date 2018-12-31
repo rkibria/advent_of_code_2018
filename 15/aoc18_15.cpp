@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <stdexcept>
 #include <sstream>
+#include <deque>
 
 using Pos = std::pair<size_t, size_t>;
 
@@ -53,11 +54,38 @@ auto World::create_distances_map() const {
 	const auto width = arena_width();
 	for(size_t row_i = 0; row_i < arena_height(); ++row_i) {
 		dists[row_i].resize(width);
-		for(size_t col_i = 0; col_i < width; ++col_i) {
+		for(size_t col_i = 0; col_i < width; ++col_i)
 			dists[row_i][col_i] = (arena[row_i][col_i] == C_WALL) ? -1 : 0;
-		}
 	}
+	for(const auto& f : fighters)
+		if(f->alive())
+			dists[f->pos.second][f->pos.first] = -1;
 	return dists;
+}
+
+void find_distances(DistancesContainer& dists, Pos start) {
+	std::deque<Pos> posns(1, start);
+
+	while(!posns.empty()) {
+		const auto pos = posns.front();
+		posns.pop_front();
+		
+		const int last_dist = dists[pos.second][pos.first];
+		const int next_dist = (last_dist == -1) ? 1 : (last_dist + 1);
+
+		auto inc_and_queue = [&dists, &posns, &next_dist](size_t x, size_t y) {
+				if(dists[y][x] == 0) {
+					dists[y][x] = next_dist;
+					posns.push_back(Pos{x, y});
+				}
+			};
+
+		inc_and_queue(pos.first, pos.second - 1);
+		inc_and_queue(pos.first - 1, pos.second);
+		inc_and_queue(pos.first + 1, pos.second);
+		inc_and_queue(pos.first, pos.second + 1);
+	}
+
 }
 
 void World::sort_fighters() {
@@ -149,6 +177,8 @@ int main(int argc, char* argv[]) {
 	std::clog << world.to_string() << std::endl;
 
 	auto dists = world.create_distances_map();
+	find_distances(dists, Pos{1,1});
+
 	for(const auto& vec : dists) {
 		for(const auto val: vec)
 			std::cout << val << "\t";
