@@ -36,23 +36,27 @@ class World {
 	FighterContainer fighters;
 
 public:
-	void load(const char*);
-	void sort_fighters();
-	auto to_string() const;
-	auto create_distances_map() const;
-
 	auto arena_height() const {return arena.size();}
 	auto arena_width() const {
 		assert(!arena.empty() && !arena[0].empty());
 		return arena[0].size();
 	}
+
+	void load(const char*);
+	void sort_fighters();
+	auto to_string() const;
+	auto create_distances_map() const;
 };
 
 auto World::create_distances_map() const {
 	DistancesContainer dists(arena_height());
 	const auto width = arena_width();
-	for(auto& v : dists)
-		v.resize(width);
+	for(size_t row_i = 0; row_i < arena_height(); ++row_i) {
+		dists[row_i].resize(width);
+		for(size_t col_i = 0; col_i < width; ++col_i) {
+			dists[row_i][col_i] = (arena[row_i][col_i] == C_WALL) ? -1 : 0;
+		}
+	}
 	return dists;
 }
 
@@ -145,6 +149,11 @@ int main(int argc, char* argv[]) {
 	std::clog << world.to_string() << std::endl;
 
 	auto dists = world.create_distances_map();
+	for(const auto& vec : dists) {
+		for(const auto val: vec)
+			std::cout << val << "\t";
+		std::cout << std::endl;
+	}
 
 	return 0;
 }
