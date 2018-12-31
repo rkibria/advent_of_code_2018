@@ -29,6 +29,7 @@ struct Fighter {
 
 using FighterContainer = std::vector<std::unique_ptr<Fighter>>;
 using ArenaContainer = std::vector<std::string>;
+using DistancesContainer = std::vector<std::vector<int>>;
 
 class World {
 	ArenaContainer arena;
@@ -38,7 +39,22 @@ public:
 	void load(const char*);
 	void sort_fighters();
 	auto to_string() const;
+	auto create_distances_map() const;
+
+	auto arena_height() const {return arena.size();}
+	auto arena_width() const {
+		assert(!arena.empty() && !arena[0].empty());
+		return arena[0].size();
+	}
 };
+
+auto World::create_distances_map() const {
+	DistancesContainer dists(arena_height());
+	const auto width = arena_width();
+	for(auto& v : dists)
+		v.resize(width);
+	return dists;
+}
 
 void World::sort_fighters() {
 	std::sort(fighters.begin(), fighters.end(),
@@ -127,6 +143,8 @@ int main(int argc, char* argv[]) {
 	world.sort_fighters();
 
 	std::clog << world.to_string() << std::endl;
+
+	auto dists = world.create_distances_map();
 
 	return 0;
 }
