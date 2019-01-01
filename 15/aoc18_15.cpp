@@ -195,6 +195,12 @@ void World::run() {
 		return result;
 	};
 
+	auto print_vector = [](const auto& v) {
+		for(auto& i : v)
+			std::clog << i << " ";
+		std::clog << std::endl;
+	};
+
 	DistancesContainer dists;
 	std::vector<size_t> targets;
 
@@ -203,12 +209,12 @@ void World::run() {
 		std::clog << fgtr->to_string() << std::endl;
 
 		get_viable_targets(targets, fgtr_i);
-		for(auto& i:targets)
-			std::clog << i << " ";
-		std::clog << std::endl;
-
+		print_vector(targets);
+		
 		find_distances(dists, fgtr->pos);
 		std::clog << distances_to_string(dists);
+
+
 	}
 }
 
