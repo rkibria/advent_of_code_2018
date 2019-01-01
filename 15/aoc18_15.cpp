@@ -36,17 +36,19 @@ class World {
 	ArenaContainer arena;
 	FighterContainer fighters;
 
-public:
 	auto arena_height() const {return arena.size();}
 	auto arena_width() const {
 		assert(!arena.empty() && !arena[0].empty());
 		return arena[0].size();
 	}
 
-	void load(const char*);
 	void sort_fighters();
-	auto to_string() const;
 	auto create_distances_map() const;
+
+public:
+	void load(const char*);
+	void run();
+	auto to_string() const;
 };
 
 auto World::create_distances_map() const {
@@ -163,6 +165,26 @@ void World::load(const char* input_file) {
 	file.close();
 }
 
+auto distances_to_string(const DistancesContainer& dists) {
+	std::stringstream ss;
+	for(const auto& vec : dists) {
+		for(const auto val: vec)
+			ss << val << "\t";
+		ss << std::endl;
+	}
+	return ss.str();
+}
+
+void World::run() {
+	sort_fighters();
+
+	std::clog << to_string() << std::endl;
+
+	auto dists = create_distances_map();
+	find_distances(dists, Pos{1,1});
+	std::clog << distances_to_string(dists);
+}
+
 int main(int argc, char* argv[]) {
 	if(argc < 2) {
 		std::cout << "Usage: " << argv[0] << " <input file>" << std::endl;
@@ -171,19 +193,7 @@ int main(int argc, char* argv[]) {
 
 	World world;
 	world.load(argv[1]);
-	
-	world.sort_fighters();
-
-	std::clog << world.to_string() << std::endl;
-
-	auto dists = world.create_distances_map();
-	find_distances(dists, Pos{1,1});
-
-	for(const auto& vec : dists) {
-		for(const auto val: vec)
-			std::cout << val << "\t";
-		std::cout << std::endl;
-	}
+	world.run();
 
 	return 0;
 }
