@@ -49,7 +49,7 @@ class World {
 	}
 
 	void sort_fighters();
-	auto create_distances_map() const;
+	void find_distances(DistancesContainer& dists, Pos start) const;
 
 public:
 	void load(const char*);
@@ -57,21 +57,19 @@ public:
 	auto to_string() const;
 };
 
-auto World::create_distances_map() const {
-	DistancesContainer dists(arena_height());
+void World::find_distances(DistancesContainer& dists, Pos start) const {
+	dists.resize(arena_height());
 	const auto width = arena_width();
 	for(size_t row_i = 0; row_i < arena_height(); ++row_i) {
 		dists[row_i].resize(width);
 		for(size_t col_i = 0; col_i < width; ++col_i)
 			dists[row_i][col_i] = (arena[row_i][col_i] == C_WALL) ? -1 : 0;
 	}
-	for(const auto& f : fighters)
-		if(f->alive())
-			dists[f->pos.second][f->pos.first] = -1;
-	return dists;
-}
 
-void find_distances(DistancesContainer& dists, Pos start) {
+	for(const auto& fgtr : fighters)
+		if(fgtr->alive())
+			dists[fgtr->pos.second][fgtr->pos.first] = -1;
+
 	std::deque<Pos> posns(1, start);
 
 	while(!posns.empty()) {
@@ -93,7 +91,6 @@ void find_distances(DistancesContainer& dists, Pos start) {
 		inc_and_queue(pos.first + 1, pos.second);
 		inc_and_queue(pos.first, pos.second + 1);
 	}
-
 }
 
 void World::sort_fighters() {
@@ -184,7 +181,7 @@ void World::run() {
 	sort_fighters();
 	std::clog << to_string() << std::endl;
 
-	auto get_viable_targets = [this](size_t fgtr_i, std::vector<size_t>& result) {
+	auto get_viable_targets = [this](std::vector<size_t>& result, size_t fgtr_i) {
 		const auto& fgtr_1 = fighters[fgtr_i];
 		assert(fgtr_1->alive());
 
@@ -198,17 +195,18 @@ void World::run() {
 		return result;
 	};
 
+	DistancesContainer dists;
 	std::vector<size_t> targets;
+
 	for(size_t fgtr_i = 0; fgtr_i < fighters.size(); ++fgtr_i) {
 		auto& fgtr = fighters[fgtr_i];
 		std::clog << fgtr->to_string() << std::endl;
 
-		get_viable_targets(fgtr_i, targets);
+		get_viable_targets(targets, fgtr_i);
 		for(auto& i:targets)
 			std::clog << i << " ";
 		std::clog << std::endl;
 
-		auto dists = create_distances_map();
 		find_distances(dists, fgtr->pos);
 		std::clog << distances_to_string(dists);
 	}
