@@ -11,6 +11,11 @@
 
 using Pos = std::pair<size_t, size_t>;
 
+std::ostream& operator<<(std::ostream& os, const Pos& pos) {
+	os << "(" << pos.first << "," << pos.second << ")";
+	return os;
+}
+
 enum class Race {elf, goblin};
 
 const int ATTACK_POWER = 3;
@@ -181,7 +186,7 @@ void World::run() {
 	sort_fighters();
 	std::clog << to_string() << std::endl;
 
-	auto get_viable_targets = [this](std::vector<size_t>& result, size_t fgtr_i) {
+	auto find_viable_targets = [this](auto& result, auto fgtr_i) {
 		const auto& fgtr_1 = fighters[fgtr_i];
 		assert(fgtr_1->alive());
 
@@ -192,7 +197,6 @@ void World::run() {
 				continue;
 			result.push_back(fgtr_j);
 		}
-		return result;
 	};
 
 	auto print_vector = [](const auto& v) {
@@ -201,20 +205,42 @@ void World::run() {
 		std::clog << std::endl;
 	};
 
+	auto find_adjacent_posns = [this](auto& result, const auto& targets, const auto& dists) {
+		result.clear();
+
+		auto add_if_free = [&dists, &result](auto pos_x, auto pos_y) {
+			if(dists[pos_y][pos_x] > 0) {
+				auto pos = Pos{pos_x, pos_y};
+				if(std::find(result.begin(), result.end(), pos) == result.end())
+					result.push_back(pos);
+			}
+		};
+
+		for(auto fgtr_i : targets) {
+			const auto& pos = fighters[fgtr_i]->pos;
+			add_if_free(pos.first, pos.second - 1);
+			add_if_free(pos.first - 1, pos.second);
+			add_if_free(pos.first + 1, pos.second);
+			add_if_free(pos.first, pos.second + 1);
+		}
+	};
+
 	DistancesContainer dists;
 	std::vector<size_t> targets;
+	std::vector<Pos> adjacent_posns;
 
 	for(size_t fgtr_i = 0; fgtr_i < fighters.size(); ++fgtr_i) {
 		auto& fgtr = fighters[fgtr_i];
 		std::clog << fgtr->to_string() << std::endl;
 
-		get_viable_targets(targets, fgtr_i);
+		find_viable_targets(targets, fgtr_i);
 		print_vector(targets);
 		
 		find_distances(dists, fgtr->pos);
 		std::clog << distances_to_string(dists);
 
-
+		find_adjacent_posns(adjacent_posns, targets, dists);
+		print_vector(adjacent_posns);
 	}
 }
 
