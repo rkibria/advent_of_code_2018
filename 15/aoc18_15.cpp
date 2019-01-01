@@ -205,7 +205,7 @@ void World::run() {
 		std::clog << std::endl;
 	};
 
-	auto find_adjacent_posns = [this](auto& result, const auto& targets, const auto& dists) {
+	auto find_reachable = [this](auto& result, const auto& targets, const auto& dists) {
 		result.clear();
 
 		auto add_if_free = [&dists, &result](auto pos_x, auto pos_y) {
@@ -227,7 +227,7 @@ void World::run() {
 
 	DistancesContainer dists;
 	std::vector<size_t> targets;
-	std::vector<Pos> adjacent_posns;
+	std::vector<Pos> reachable;
 
 	for(size_t fgtr_i = 0; fgtr_i < fighters.size(); ++fgtr_i) {
 		auto& fgtr = fighters[fgtr_i];
@@ -239,8 +239,14 @@ void World::run() {
 		find_distances(dists, fgtr->pos);
 		std::clog << distances_to_string(dists);
 
-		find_adjacent_posns(adjacent_posns, targets, dists);
-		print_vector(adjacent_posns);
+		find_reachable(reachable, targets, dists);
+
+		std::sort(reachable.begin(), reachable.end(),
+			[&dists](const auto& a, const auto& b) {
+				return dists[a.second][a.first] < dists[b.second][b.first];
+			});
+
+		print_vector(reachable);
 	}
 }
 
