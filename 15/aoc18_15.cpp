@@ -25,7 +25,13 @@ struct Fighter {
 	Race race;
 	int hp = 200;
 
-	bool alive() const {return hp > 0;}
+	auto alive() const {return hp > 0;}
+	auto to_char() const {return (race == Race::elf) ? C_ELF : C_GOBLIN;}
+	auto to_string() const {
+		std::stringstream ss;
+		ss << to_char() << "(" << pos.first << "," << pos.second << ": " << hp << ")";
+		return ss.str();
+	}
 };
 
 using FighterContainer = std::vector<std::unique_ptr<Fighter>>;
@@ -105,10 +111,9 @@ auto World::to_string() const {
 	std::stringstream ss;
 
 	ss << fighters.size() << " fighters:" << std::endl;
-	for(const auto& f : fighters) {
-		const auto f_ch = (f->race == Race::elf) ? C_ELF : C_GOBLIN;
-		arn[f->pos.second][f->pos.first] = f_ch;
-		ss << f_ch << " " << f->pos.first << "," << f->pos.second << std::endl;
+	for(const auto& fgtr : fighters) {
+		arn[fgtr->pos.second][fgtr->pos.first] = fgtr->to_char();
+		ss << fgtr->to_string() << std::endl;
 	}
 	for(const auto& s : arn)
 		ss << s << std::endl;
@@ -177,12 +182,14 @@ auto distances_to_string(const DistancesContainer& dists) {
 
 void World::run() {
 	sort_fighters();
-
 	std::clog << to_string() << std::endl;
 
-	auto dists = create_distances_map();
-	find_distances(dists, Pos{1,1});
-	std::clog << distances_to_string(dists);
+	for(auto& fgtr : fighters) {
+		std::clog << fgtr->to_string() << std::endl;
+		auto dists = create_distances_map();
+		find_distances(dists, fgtr->pos);
+		std::clog << distances_to_string(dists);
+	}
 }
 
 int main(int argc, char* argv[]) {
@@ -191,9 +198,9 @@ int main(int argc, char* argv[]) {
 		return -1;
 	}
 
-	World world;
-	world.load(argv[1]);
-	world.run();
+	World wld;
+	wld.load(argv[1]);
+	wld.run();
 
 	return 0;
 }
