@@ -184,8 +184,30 @@ void World::run() {
 	sort_fighters();
 	std::clog << to_string() << std::endl;
 
-	for(auto& fgtr : fighters) {
+	auto get_viable_targets = [this](size_t fgtr_i, std::vector<size_t>& result) {
+		const auto& fgtr_1 = fighters[fgtr_i];
+		assert(fgtr_1->alive());
+
+		result.clear();
+		for(size_t fgtr_j = 0; fgtr_j < fighters.size(); ++fgtr_j) {
+			const auto& fgtr_2 = fighters[fgtr_j];
+			if(fgtr_j == fgtr_i || fgtr_1->race == fgtr_2->race || !fgtr_2->alive())
+				continue;
+			result.push_back(fgtr_j);
+		}
+		return result;
+	};
+
+	std::vector<size_t> targets;
+	for(size_t fgtr_i = 0; fgtr_i < fighters.size(); ++fgtr_i) {
+		auto& fgtr = fighters[fgtr_i];
 		std::clog << fgtr->to_string() << std::endl;
+
+		get_viable_targets(fgtr_i, targets);
+		for(auto& i:targets)
+			std::clog << i << " ";
+		std::clog << std::endl;
+
 		auto dists = create_distances_map();
 		find_distances(dists, fgtr->pos);
 		std::clog << distances_to_string(dists);
