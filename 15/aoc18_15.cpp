@@ -174,23 +174,22 @@ auto distances_to_string(const DistancesContainer& dists) {
 }
 
 void World::run() {
-	auto sort_fighters_reading_order = [this]() {
+	auto reading_order_pred = [](const auto& a, const auto& b) {
+		return a.second < b.second
+			|| (a.second == b.second
+				&& a.first < b.first);
+	};
+
+	auto sort_fighters_reading_order = [&reading_order_pred, this]() {
 		std::sort(fighters.begin(), fighters.end(),
-			[](const std::unique_ptr<Fighter>& a,
+			[&reading_order_pred](const std::unique_ptr<Fighter>& a,
 				const std::unique_ptr<Fighter>& b) {
-					return a->pos.second < b->pos.second
-					|| (a->pos.second == b->pos.second
-					&& a->pos.first < b->pos.first);
+					return reading_order_pred(a->pos, b->pos);
 				});
 	};
 
-	auto sort_posns_reading_order = [](auto& posns) {
-		std::sort(posns.begin(), posns.end(),
-			[](const auto& a, const auto& b) {
-				return a.second < b.second
-					|| (a.second == b.second
-					&& a.first < b.first);
-			});
+	auto sort_posns_reading_order = [&reading_order_pred](auto& posns) {
+		std::sort(posns.begin(), posns.end(), reading_order_pred);
 	};
 
 	auto find_targets = [this](auto& result, auto fgtr_i) {
