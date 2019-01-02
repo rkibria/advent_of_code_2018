@@ -54,7 +54,6 @@ class World {
 		return arena[0].size();
 	}
 
-	void sort_fighters();
 	void find_distances(DistancesContainer& dists, Pos start) const;
 
 public:
@@ -97,16 +96,6 @@ void World::find_distances(DistancesContainer& dists, Pos start) const {
 		inc_and_queue(pos.first + 1, pos.second);
 		inc_and_queue(pos.first, pos.second + 1);
 	}
-}
-
-void World::sort_fighters() {
-	std::sort(fighters.begin(), fighters.end(),
-		[](const std::unique_ptr<Fighter>& a,
-			const std::unique_ptr<Fighter>& b) {
-				return a->pos.second < b->pos.second
-				|| (a->pos.second == b->pos.second
-					&& a->pos.first < b->pos.first);
-			});
 }
 
 auto World::to_string() const {
@@ -184,6 +173,16 @@ auto distances_to_string(const DistancesContainer& dists) {
 }
 
 void World::run() {
+	auto sort_fighters_reading_order = [this]() {
+		std::sort(fighters.begin(), fighters.end(),
+			[](const std::unique_ptr<Fighter>& a,
+				const std::unique_ptr<Fighter>& b) {
+					return a->pos.second < b->pos.second
+					|| (a->pos.second == b->pos.second
+					&& a->pos.first < b->pos.first);
+				});
+	};
+
 	auto alives = [this]() {
 		return std::count_if(fighters.begin(), fighters.end(),
 			[](const auto& fgtr) {return fgtr->alive();});
@@ -228,11 +227,16 @@ void World::run() {
 		}
 	};
 
-	auto sort_posns_reading_order = [](auto& vec, const auto& dists) {
+	auto sort_posns_distance = [](auto& vec, const auto& dists) {
 		std::sort(vec.begin(), vec.end(),
 			[&dists](const auto& a, const auto& b) {
 				return dists[a.second][a.first] < dists[b.second][b.first];
 			});
+	};
+
+	auto do_combat = [this](auto fgtr_i) {
+		auto& fgtr = fighters[fgtr_i];
+		return false;
 	};
 
 	DistancesContainer dists;
@@ -242,12 +246,15 @@ void World::run() {
 	while(alives() > 1) {
 		std::clog << "alive: " << alives() << std::endl;
 
-		sort_fighters();
+		sort_fighters_reading_order();
 		std::clog << to_string() << std::endl;
 
 		for(size_t fgtr_i = 0; fgtr_i < fighters.size(); ++fgtr_i) {
 			auto& fgtr = fighters[fgtr_i];
-			std::clog << fgtr->to_string() << std::endl;
+			if(!fgtr->alive())
+				continue;
+
+			std::clog << "run " << fgtr->to_string() << std::endl;
 
 			find_viable_targets(targets, fgtr_i);
 			print_vector(targets);
@@ -256,7 +263,7 @@ void World::run() {
 			std::clog << distances_to_string(dists);
 
 			find_reachable(reachable, targets, dists);
-			sort_posns_reading_order(reachable, dists);
+			sort_posns_distance(reachable, dists);
 			print_vector(reachable);
 		}
 	}
