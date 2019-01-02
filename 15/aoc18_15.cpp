@@ -183,7 +183,7 @@ void World::run() {
 				});
 	};
 
-	auto find_viable_targets = [this](auto& result, auto fgtr_i) {
+	auto find_targets = [this](auto& result, auto fgtr_i) {
 		const auto& fgtr_1 = fighters[fgtr_i];
 		assert(fgtr_1->alive());
 
@@ -229,22 +229,22 @@ void World::run() {
 			});
 	};
 
-	auto find_combat_ready = [this](auto& combat_ready, const auto& targets, const auto& atkr_pos) {
-		combat_ready.clear();
+	auto find_attackable = [this](auto& attackable, const auto& targets, const auto& atkr_pos) {
+		attackable.clear();
 		for(const auto& dfnr_i : targets) {
 			const auto& dfnr_pos = fighters[dfnr_i]->pos;
 			if((dfnr_pos.first == atkr_pos.first && dfnr_pos.second == atkr_pos.second - 1)
 				|| (dfnr_pos.first == atkr_pos.first - 1 && dfnr_pos.second == atkr_pos.second)
 				|| (dfnr_pos.first == atkr_pos.first + 1 && dfnr_pos.second == atkr_pos.second)
 				|| (dfnr_pos.first == atkr_pos.first && dfnr_pos.second == atkr_pos.second + 1))
-				combat_ready.push_back(dfnr_i);
+				attackable.push_back(dfnr_i);
 		}
 	};
 
 	DistancesContainer dists;
 	std::vector<size_t> targets;
 	std::vector<Pos> reachable;
-	std::vector<size_t> combat_ready;
+	std::vector<size_t> attackable;
 
 	bool done = false;
 	while(!done) {
@@ -258,8 +258,10 @@ void World::run() {
 
 			std::clog << "attacking: " << atkr->to_string() << std::endl;
 
-			find_viable_targets(targets, atkr_i);
+			find_targets(targets, atkr_i);
+			std::clog << "viable targets: ";
 			print_vector(targets);
+
 			if(targets.empty()) {
 				done = true;
 				break;
@@ -268,14 +270,19 @@ void World::run() {
 			find_distances(dists, atkr->pos);
 			std::clog << distances_to_string(dists);
 
-			find_combat_ready(combat_ready, targets, atkr->pos);
-			if(!combat_ready.empty()) {
+			find_attackable(attackable, targets, atkr->pos);
+			if(!attackable.empty()) {
+				std::clog << "attack order: ";
+				print_vector(attackable);
 				throw std::runtime_error("TODO combat");
+				continue;
 			}
 
 			find_reachable(reachable, targets, dists);
 			sort_posns_distance(reachable, dists);
 			print_vector(reachable);
+
+			done = true;
 		}
 	}
 
