@@ -34,7 +34,8 @@ struct Fighter {
 	auto to_char() const {return (race == Race::elf) ? C_ELF : C_GOBLIN;}
 	auto to_string() const {
 		std::stringstream ss;
-		ss << to_char() << "(" << pos.first << "," << pos.second << ": " << hp << ")"
+		ss << to_char() << "(" << pos.first << "," << pos.second << ": "
+			<< hp << ")"
 			<< (alive() ? "*" : "");
 		return ss.str();
 	}
@@ -190,7 +191,9 @@ void World::run() {
 		result.clear();
 		for(size_t fgtr_j = 0; fgtr_j < fighters.size(); ++fgtr_j) {
 			const auto& fgtr_2 = fighters[fgtr_j];
-			if(fgtr_j == fgtr_i || fgtr_1->race == fgtr_2->race || !fgtr_2->alive())
+			if(fgtr_j == fgtr_i
+				|| fgtr_1->race == fgtr_2->race
+				|| !fgtr_2->alive())
 				continue;
 			result.push_back(fgtr_j);
 		}
@@ -233,10 +236,14 @@ void World::run() {
 		attackable.clear();
 		for(const auto& dfnr_i : targets) {
 			const auto& dfnr_pos = fighters[dfnr_i]->pos;
-			if((dfnr_pos.first == atkr_pos.first && dfnr_pos.second == atkr_pos.second - 1)
-				|| (dfnr_pos.first == atkr_pos.first - 1 && dfnr_pos.second == atkr_pos.second)
-				|| (dfnr_pos.first == atkr_pos.first + 1 && dfnr_pos.second == atkr_pos.second)
-				|| (dfnr_pos.first == atkr_pos.first && dfnr_pos.second == atkr_pos.second + 1))
+			if((dfnr_pos.first == atkr_pos.first
+				&& dfnr_pos.second == atkr_pos.second - 1)
+				|| (dfnr_pos.first == atkr_pos.first - 1
+				&& dfnr_pos.second == atkr_pos.second)
+				|| (dfnr_pos.first == atkr_pos.first + 1
+				&& dfnr_pos.second == atkr_pos.second)
+				|| (dfnr_pos.first == atkr_pos.first
+				&& dfnr_pos.second == atkr_pos.second + 1))
 				attackable.push_back(dfnr_i);
 		}
 	};
@@ -278,11 +285,28 @@ void World::run() {
 				continue;
 			}
 
+			// Get vector of positions adjacent to targets that
+			// can be reached by attacker
 			find_reachable(reachable, targets, dists);
+
 			sort_posns_distance(reachable, dists);
+			
+			std::clog << "reachable: ";
+			print_vector(reachable);
+
+			const auto min_pos = reachable[0];
+			const auto min_dist = dists[min_pos.second][min_pos.first];
+			reachable.erase(std::remove_if(reachable.begin(), reachable.end(),
+				[&min_dist, &dists](const auto& pos) {
+					return dists[pos.second][pos.first] > min_dist;
+					}
+				));
+
+			std::clog << "nearest: ";
 			print_vector(reachable);
 
 			done = true;
+			break;
 		}
 	}
 
