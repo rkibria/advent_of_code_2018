@@ -229,31 +229,49 @@ void World::run() {
 			});
 	};
 
+	auto find_combat_ready = [this](auto& combat_ready, const auto& targets, const auto& atkr_pos) {
+		combat_ready.clear();
+		for(const auto& dfnr_i : targets) {
+			const auto& dfnr_pos = fighters[dfnr_i]->pos;
+			if((dfnr_pos.first == atkr_pos.first && dfnr_pos.second == atkr_pos.second - 1)
+				|| (dfnr_pos.first == atkr_pos.first - 1 && dfnr_pos.second == atkr_pos.second)
+				|| (dfnr_pos.first == atkr_pos.first + 1 && dfnr_pos.second == atkr_pos.second)
+				|| (dfnr_pos.first == atkr_pos.first && dfnr_pos.second == atkr_pos.second + 1))
+				combat_ready.push_back(dfnr_i);
+		}
+	};
+
 	DistancesContainer dists;
 	std::vector<size_t> targets;
 	std::vector<Pos> reachable;
+	std::vector<size_t> combat_ready;
 
 	bool done = false;
 	while(!done) {
 		sort_fighters_reading_order();
 		std::clog << to_string() << std::endl;
 
-		for(size_t fgtr_i = 0; fgtr_i < fighters.size(); ++fgtr_i) {
-			auto& fgtr = fighters[fgtr_i];
-			if(!fgtr->alive())
+		for(size_t atkr_i = 0; atkr_i < fighters.size(); ++atkr_i) {
+			auto& atkr = fighters[atkr_i];
+			if(!atkr->alive())
 				continue;
 
-			std::clog << "run " << fgtr->to_string() << std::endl;
+			std::clog << "attacking: " << atkr->to_string() << std::endl;
 
-			find_viable_targets(targets, fgtr_i);
+			find_viable_targets(targets, atkr_i);
 			print_vector(targets);
 			if(targets.empty()) {
 				done = true;
 				break;
 			}
 
-			find_distances(dists, fgtr->pos);
+			find_distances(dists, atkr->pos);
 			std::clog << distances_to_string(dists);
+
+			find_combat_ready(combat_ready, targets, atkr->pos);
+			if(!combat_ready.empty()) {
+				throw std::runtime_error("TODO combat");
+			}
 
 			find_reachable(reachable, targets, dists);
 			sort_posns_distance(reachable, dists);
