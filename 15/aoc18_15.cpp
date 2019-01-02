@@ -183,11 +183,6 @@ void World::run() {
 				});
 	};
 
-	auto alives = [this]() {
-		return std::count_if(fighters.begin(), fighters.end(),
-			[](const auto& fgtr) {return fgtr->alive();});
-	};
-
 	auto find_viable_targets = [this](auto& result, auto fgtr_i) {
 		const auto& fgtr_1 = fighters[fgtr_i];
 		assert(fgtr_1->alive());
@@ -234,18 +229,12 @@ void World::run() {
 			});
 	};
 
-	auto do_combat = [this](auto fgtr_i) {
-		auto& fgtr = fighters[fgtr_i];
-		return false;
-	};
-
 	DistancesContainer dists;
 	std::vector<size_t> targets;
 	std::vector<Pos> reachable;
 
-	while(alives() > 1) {
-		std::clog << "alive: " << alives() << std::endl;
-
+	bool done = false;
+	while(!done) {
 		sort_fighters_reading_order();
 		std::clog << to_string() << std::endl;
 
@@ -258,7 +247,11 @@ void World::run() {
 
 			find_viable_targets(targets, fgtr_i);
 			print_vector(targets);
-			
+			if(targets.empty()) {
+				done = true;
+				break;
+			}
+
 			find_distances(dists, fgtr->pos);
 			std::clog << distances_to_string(dists);
 
