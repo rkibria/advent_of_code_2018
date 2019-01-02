@@ -184,6 +184,15 @@ void World::run() {
 				});
 	};
 
+	auto sort_posns_reading_order = [](auto& posns) {
+		std::sort(posns.begin(), posns.end(),
+			[](const auto& a, const auto& b) {
+				return a.second < b.second
+					|| (a.second == b.second
+					&& a.first < b.first);
+			});
+	};
+
 	auto find_targets = [this](auto& result, auto fgtr_i) {
 		const auto& fgtr_1 = fighters[fgtr_i];
 		assert(fgtr_1->alive());
@@ -301,6 +310,7 @@ void World::run() {
 					return dists[pos.second][pos.first] > min_dist;
 					}
 				));
+			sort_posns_reading_order(reachable);
 
 			std::clog << "nearest: ";
 			print_vector(reachable);
