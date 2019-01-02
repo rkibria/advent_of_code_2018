@@ -297,6 +297,9 @@ void World::run() {
 			// can be reached by attacker
 			find_reachable(reachable, targets, dists);
 
+			if(reachable.empty())
+				continue;
+
 			sort_posns_distance(reachable, dists);
 			
 			std::clog << "reachable: ";
@@ -313,6 +316,9 @@ void World::run() {
 
 			std::clog << "nearest: ";
 			print_vector(reachable);
+
+			const Pos chosen = reachable[0];
+			std::clog << "chosen: " << chosen << std::endl;
 
 			done = true;
 			break;
