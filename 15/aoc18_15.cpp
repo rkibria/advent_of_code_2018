@@ -189,11 +189,6 @@ void World::run() {
 			[](const auto& fgtr) {return fgtr->alive();});
 	};
 
-	std::clog << "alive: " << alives() << std::endl;
-
-	sort_fighters();
-	std::clog << to_string() << std::endl;
-
 	auto find_viable_targets = [this](auto& result, auto fgtr_i) {
 		const auto& fgtr_1 = fighters[fgtr_i];
 		assert(fgtr_1->alive());
@@ -233,29 +228,39 @@ void World::run() {
 		}
 	};
 
+	auto sort_posns_reading_order = [](auto& vec, const auto& dists) {
+		std::sort(vec.begin(), vec.end(),
+			[&dists](const auto& a, const auto& b) {
+				return dists[a.second][a.first] < dists[b.second][b.first];
+			});
+	};
+
 	DistancesContainer dists;
 	std::vector<size_t> targets;
 	std::vector<Pos> reachable;
 
-	for(size_t fgtr_i = 0; fgtr_i < fighters.size(); ++fgtr_i) {
-		auto& fgtr = fighters[fgtr_i];
-		std::clog << fgtr->to_string() << std::endl;
+	while(alives() > 1) {
+		std::clog << "alive: " << alives() << std::endl;
 
-		find_viable_targets(targets, fgtr_i);
-		print_vector(targets);
-		
-		find_distances(dists, fgtr->pos);
-		std::clog << distances_to_string(dists);
+		sort_fighters();
+		std::clog << to_string() << std::endl;
 
-		find_reachable(reachable, targets, dists);
+		for(size_t fgtr_i = 0; fgtr_i < fighters.size(); ++fgtr_i) {
+			auto& fgtr = fighters[fgtr_i];
+			std::clog << fgtr->to_string() << std::endl;
 
-		std::sort(reachable.begin(), reachable.end(),
-			[&dists](const auto& a, const auto& b) {
-				return dists[a.second][a.first] < dists[b.second][b.first];
-			});
+			find_viable_targets(targets, fgtr_i);
+			print_vector(targets);
+			
+			find_distances(dists, fgtr->pos);
+			std::clog << distances_to_string(dists);
 
-		print_vector(reachable);
+			find_reachable(reachable, targets, dists);
+			sort_posns_reading_order(reachable, dists);
+			print_vector(reachable);
+		}
 	}
+
 }
 
 int main(int argc, char* argv[]) {
