@@ -34,7 +34,8 @@ struct Fighter {
 	auto to_char() const {return (race == Race::elf) ? C_ELF : C_GOBLIN;}
 	auto to_string() const {
 		std::stringstream ss;
-		ss << to_char() << "(" << pos.first << "," << pos.second << ": " << hp << ")";
+		ss << to_char() << "(" << pos.first << "," << pos.second << ": " << hp << ")"
+			<< (alive() ? "*" : "");
 		return ss.str();
 	}
 };
@@ -112,7 +113,7 @@ auto World::to_string() const {
 	auto arn = arena;
 	std::stringstream ss;
 
-	ss << fighters.size() << " fighters:" << std::endl;
+	ss << "==== " << fighters.size() << " fighters:" << std::endl;
 	for(const auto& fgtr : fighters) {
 		arn[fgtr->pos.second][fgtr->pos.first] = fgtr->to_char();
 		ss << fgtr->to_string() << std::endl;
@@ -183,6 +184,13 @@ auto distances_to_string(const DistancesContainer& dists) {
 }
 
 void World::run() {
+	auto alives = [this]() {
+		return std::count_if(fighters.begin(), fighters.end(),
+			[](const auto& fgtr) {return fgtr->alive();});
+	};
+
+	std::clog << "alive: " << alives() << std::endl;
+
 	sort_fighters();
 	std::clog << to_string() << std::endl;
 
