@@ -8,6 +8,13 @@
 #include <stdexcept>
 #include <sstream>
 #include <deque>
+#include <limits>
+
+auto print_vector = [](const auto& v) {
+	for(auto& i : v)
+		std::clog << i << " ";
+	std::clog << std::endl;
+};
 
 using Pos = std::pair<size_t, size_t>;
 
@@ -43,7 +50,13 @@ struct Fighter {
 
 using FighterContainer = std::vector<std::unique_ptr<Fighter>>;
 using ArenaContainer = std::vector<std::string>;
-using DistancesContainer = std::vector<std::vector<int>>;
+
+using DistanceType = int;
+using DistancesContainer = std::vector<std::vector<DistanceType>>;
+const auto DIST_NONE = -1;
+bool dstn_valid(DistanceType dst) {
+	return dst > 0 && dst != DIST_NONE;
+}
 
 class World {
 	ArenaContainer arena;
@@ -64,18 +77,21 @@ public:
 };
 
 void World::find_distances(DistancesContainer& dists, Pos start) const {
+	// Mark all walls as blocked, else init with 0
 	dists.resize(arena_height());
 	const auto width = arena_width();
 	for(size_t row_i = 0; row_i < arena_height(); ++row_i) {
 		dists[row_i].resize(width);
 		for(size_t col_i = 0; col_i < width; ++col_i)
-			dists[row_i][col_i] = (arena[row_i][col_i] == C_WALL) ? -1 : 0;
+			dists[row_i][col_i] = (arena[row_i][col_i] == C_WALL) ? DIST_NONE : 0;
 	}
 
+	// Mark all fighter's positions as blocked
 	for(const auto& fgtr : fighters)
 		if(fgtr->alive())
-			dists[fgtr->pos.second][fgtr->pos.first] = -1;
+			dists[fgtr->pos.second][fgtr->pos.first] = DIST_NONE;
 
+	// Find distances from start position
 	std::deque<Pos> posns(1, start);
 
 	while(!posns.empty()) {
@@ -83,7 +99,7 @@ void World::find_distances(DistancesContainer& dists, Pos start) const {
 		posns.pop_front();
 		
 		const int last_dist = dists[pos.second][pos.first];
-		const int next_dist = (last_dist == -1) ? 1 : (last_dist + 1);
+		const int next_dist = (last_dist == DIST_NONE) ? 1 : (last_dist + 1);
 
 		auto inc_and_queue = [&dists, &posns, &next_dist](size_t x, size_t y) {
 				if(dists[y][x] == 0) {
@@ -167,7 +183,12 @@ auto distances_to_string(const DistancesContainer& dists) {
 	std::stringstream ss;
 	for(const auto& vec : dists) {
 		for(const auto val: vec)
-			ss << val << "\t";
+			if(val == DIST_NONE) {
+				ss << "#\t";
+			}
+			else {
+				ss << val << "\t";
+			}
 		ss << std::endl;
 	}
 	return ss.str();
@@ -207,17 +228,11 @@ void World::run() {
 		}
 	};
 
-	auto print_vector = [](const auto& v) {
-		for(auto& i : v)
-			std::clog << i << " ";
-		std::clog << std::endl;
-	};
-
 	auto find_reachable = [this](auto& result, const auto& targets, const auto& dists) {
 		result.clear();
 
 		auto add_if_free = [&dists, &result](auto pos_x, auto pos_y) {
-			if(dists[pos_y][pos_x] > 0) {
+			if(dstn_valid(dists[pos_y][pos_x])) {
 				auto pos = Pos{pos_x, pos_y};
 				if(std::find(result.begin(), result.end(), pos) == result.end())
 					result.push_back(pos);
@@ -317,8 +332,17 @@ void World::run() {
 			std::clog << "nearest: ";
 			print_vector(reachable);
 
-			const Pos chosen = reachable[0];
-			std::clog << "chosen: " << chosen << std::endl;
+			const auto target_pos = reachable[0];
+			std::clog << "target_pos: " << target_pos << std::endl;
+
+			// find path backward from target_pos to atkr
+			auto cur_pos = target_pos;
+			while(true) {
+				// find lowest distance squares
+				// sort them by reading order
+				// choose first one
+				break;
+			}
 
 			done = true;
 			break;
