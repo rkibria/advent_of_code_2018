@@ -51,9 +51,9 @@ struct Fighter {
 using FighterContainer = std::vector<std::unique_ptr<Fighter>>;
 using ArenaContainer = std::vector<std::string>;
 
-using DistanceType = int;
+using DistanceType = unsigned int;
 using DistancesContainer = std::vector<std::vector<DistanceType>>;
-const auto DIST_NONE = -1;
+const auto DIST_NONE = std::numeric_limits<DistanceType>::max();
 bool dstn_valid(DistanceType dst) {
 	return dst > 0 && dst != DIST_NONE;
 }
@@ -98,8 +98,8 @@ void World::find_distances(DistancesContainer& dists, Pos start) const {
 		const auto pos = posns.front();
 		posns.pop_front();
 		
-		const int last_dist = dists[pos.second][pos.first];
-		const int next_dist = (last_dist == DIST_NONE) ? 1 : (last_dist + 1);
+		const auto last_dist = dists[pos.second][pos.first];
+		const auto next_dist = (last_dist == DIST_NONE) ? 1 : (last_dist + 1);
 
 		auto inc_and_queue = [&dists, &posns, &next_dist](size_t x, size_t y) {
 				if(dists[y][x] == 0) {
