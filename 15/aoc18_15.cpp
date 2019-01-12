@@ -50,7 +50,31 @@ struct Fighter {
 };
 
 using FighterContainer = std::vector<std::unique_ptr<Fighter>>;
+
 using ArenaContainer = std::vector<std::string>;
+
+class ArenaMap {
+	ArenaContainer arn;
+public:
+	ArenaMap();
+	
+	auto height() const {return arn.size();}
+	auto width() const {
+		assert(!arn.empty() && !arn[0].empty());
+		return arn[0].size();
+	}
+
+	void add_row(const std::string& row) {
+		if(!arn.empty() && arn.back().size() != row.size()) {
+			throw std::runtime_error("Arena rows must all be equal length");
+		}
+		arn.push_back(row);
+	}
+
+	auto get(size_t col, size_t row) const {
+		return arn[row][col];
+	}
+};
 
 using DistanceType = unsigned int;
 using DistancesContainer = std::vector<std::vector<DistanceType>>;
