@@ -9,6 +9,7 @@
 #include <sstream>
 #include <deque>
 #include <limits>
+#include <array>
 
 auto print_vector = [](const auto& v) {
 	for(auto& i : v)
@@ -274,6 +275,23 @@ void World::run() {
 		}
 	};
 
+	auto find_next_step = [&sort_posns_distance](const auto& target_pos, const auto& dists) {
+		auto cur_pos = target_pos;
+		std::array<Pos, 4> adjacs;
+		while(true) {
+			if(dists[cur_pos.second][cur_pos.first] == 1) {
+				return cur_pos;
+			}
+
+			adjacs[0] = Pos{cur_pos.first, cur_pos.second - 1};
+			adjacs[1] = Pos{cur_pos.first - 1, cur_pos.second};
+			adjacs[2] = Pos{cur_pos.first + 1, cur_pos.second};
+			adjacs[3] = Pos{cur_pos.first, cur_pos.second + 1};
+			sort_posns_distance(adjacs, dists);
+			cur_pos = adjacs[0];
+		}
+	};
+
 	DistancesContainer dists;
 	std::vector<size_t> targets;
 	std::vector<Pos> reachable;
@@ -338,26 +356,10 @@ void World::run() {
 			const auto target_pos = reachable[0];
 			std::clog << "target_pos: " << target_pos << std::endl;
 
-			// find path backward from target_pos to atkr
-			auto cur_pos = target_pos;
-			std::vector<Pos> adjacs(4);
-			while(true) {
-				if(dists[cur_pos.second][cur_pos.first] == 1) {
-					break;
-				}
-
-				adjacs[0] = Pos{cur_pos.first, cur_pos.second - 1};
-				adjacs[1] = Pos{cur_pos.first - 1, cur_pos.second};
-				adjacs[2] = Pos{cur_pos.first + 1, cur_pos.second};
-				adjacs[3] = Pos{cur_pos.first, cur_pos.second + 1};
-				sort_posns_distance(adjacs, dists);
-				print_vector(adjacs);
-
-				cur_pos = adjacs[0];
-			}
-
-			done = true;
-			break;
+			const auto next_pos = find_next_step(target_pos, dists);
+			std::clog << "next: " << next_pos << std::endl;
+		
+			atkr->pos = next_pos;
 		}
 	}
 
