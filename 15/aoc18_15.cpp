@@ -248,10 +248,13 @@ void World::run() {
 		}
 	};
 
-	auto sort_posns_distance = [](auto& vec, const auto& dists) {
+	auto sort_posns_distance = [&reading_order_pred](auto& vec, const auto& dists) {
 		std::sort(vec.begin(), vec.end(),
-			[&dists](const auto& a, const auto& b) {
-				return dists[a.second][a.first] < dists[b.second][b.first];
+			[&reading_order_pred, &dists](const auto& a, const auto& b) {
+				const auto dst_a = dists[a.second][a.first];
+				const auto dst_b = dists[b.second][b.first];
+				return dst_a < dst_b
+					|| (dst_a == dst_b && reading_order_pred(a, b));
 			});
 	};
 
@@ -337,11 +340,20 @@ void World::run() {
 
 			// find path backward from target_pos to atkr
 			auto cur_pos = target_pos;
+			std::vector<Pos> adjacs(4);
 			while(true) {
-				// find lowest distance squares
-				// sort them by reading order
-				// choose first one
-				break;
+				if(dists[cur_pos.second][cur_pos.first] == 1) {
+					break;
+				}
+
+				adjacs[0] = Pos{cur_pos.first, cur_pos.second - 1};
+				adjacs[1] = Pos{cur_pos.first - 1, cur_pos.second};
+				adjacs[2] = Pos{cur_pos.first + 1, cur_pos.second};
+				adjacs[3] = Pos{cur_pos.first, cur_pos.second + 1};
+				sort_posns_distance(adjacs, dists);
+				print_vector(adjacs);
+
+				cur_pos = adjacs[0];
 			}
 
 			done = true;
