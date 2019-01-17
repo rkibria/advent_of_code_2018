@@ -55,10 +55,18 @@ using ArenaContainer = std::vector<std::string>;
 
 class ArenaMap {
 	ArenaContainer arn;
+
 public:
-	ArenaMap();
+	ArenaMap() {}
 	
-	auto height() const {return arn.size();}
+	auto& get_container() {
+		return arn;
+	}
+
+	auto height() const {
+		return arn.size();
+	}
+
 	auto width() const {
 		assert(!arn.empty() && !arn[0].empty());
 		return arn[0].size();
@@ -74,6 +82,10 @@ public:
 	auto get(size_t col, size_t row) const {
 		return arn[row][col];
 	}
+
+	auto& get_ref(size_t col, size_t row) {
+		return arn[row][col];
+	}
 };
 
 using DistanceType = unsigned int;
@@ -84,17 +96,10 @@ bool dstn_valid(DistanceType dst) {
 }
 
 class World {
-	ArenaContainer arena;
+	ArenaMap arena;
 	FighterContainer fighters;
 
-	auto arena_height() const {return arena.size();}
-	auto arena_width() const {
-		assert(!arena.empty() && !arena[0].empty());
-		return arena[0].size();
-	}
-
 	void find_distances(DistancesContainer& dists, Pos start) const;
-
 public:
 	void load(const char*);
 	void run();
@@ -103,12 +108,12 @@ public:
 
 void World::find_distances(DistancesContainer& dists, Pos start) const {
 	// Mark all walls as blocked, else init with 0
-	dists.resize(arena_height());
-	const auto width = arena_width();
-	for(size_t row_i = 0; row_i < arena_height(); ++row_i) {
+	dists.resize(arena.height());
+	const auto width = arena.width();
+	for(size_t row_i = 0; row_i < arena.height(); ++row_i) {
 		dists[row_i].resize(width);
 		for(size_t col_i = 0; col_i < width; ++col_i)
-			dists[row_i][col_i] = (arena[row_i][col_i] == C_WALL) ? DIST_NONE : 0;
+			dists[row_i][col_i] = (arena.get(col_i, row_i) == C_WALL) ? DIST_NONE : 0;
 	}
 
 	// Mark all fighter's positions as blocked
@@ -141,15 +146,15 @@ void World::find_distances(DistancesContainer& dists, Pos start) const {
 }
 
 auto World::to_string() const {
-	auto arn = arena;
+	auto arena_copy = arena;
 	std::stringstream ss;
 
 	ss << "==== " << fighters.size() << " fighters:" << std::endl;
 	for(const auto& fgtr : fighters) {
-		arn[fgtr->pos.second][fgtr->pos.first] = fgtr->to_char();
+		arena_copy.get_ref(fgtr->pos.first, fgtr->pos.second) = fgtr->to_char();
 		ss << fgtr->to_string() << std::endl;
 	}
-	for(const auto& s : arn)
+	for(const auto& s : arena_copy.get_container())
 		ss << s << std::endl;
 	return ss.str();
 }
@@ -167,7 +172,7 @@ void World::load(const char* input_file) {
 
 		std::string arena_row;
 		auto current_pos = [ this, &arena_row ]() {
-			return Pos(arena_row.size(), arena.size());
+			return Pos(arena_row.size(), arena.height());
 			};
 
 		for(auto c : line) {
@@ -196,10 +201,10 @@ void World::load(const char* input_file) {
 				break;
 			}
 		}
-		if(!arena.empty() && arena.back().size() != arena_row.size()) {
+		if(arena.height() > 0 && arena.get_container().back().size() != arena_row.size()) {
 			throw std::runtime_error("Input lines must all be equal length");
 		}
-		arena.push_back(arena_row);
+		arena.add_row(arena_row);
 	}
 	file.close();
 }
