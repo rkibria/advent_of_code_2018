@@ -92,7 +92,7 @@ public:
 	DistanceMap() {}
 
 	auto& get_cntnr() {return dst_cntnr;}
-	auto get(size_t col, size_t row) const {return dst_cntnr[row][col];}
+	const auto& get(size_t col, size_t row) const {return dst_cntnr[row][col];}
 	auto& get(size_t col, size_t row) {return dst_cntnr[row][col];}
 
 };
