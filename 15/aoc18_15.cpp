@@ -54,59 +54,60 @@ using FighterContainer = std::vector<std::unique_ptr<Fighter>>;
 using ArenaContainer = std::vector<std::string>;
 
 class ArenaMap {
-	ArenaContainer arn;
-
+	ArenaContainer arn_cntnr;
 public:
 	ArenaMap() {}
-	
-	auto& get_container() {
-		return arn;
-	}
 
-	auto height() const {
-		return arn.size();
-	}
+	auto& get_cntnr() {return arn_cntnr;}
+	auto height() const {return arn_cntnr.size();}
 
 	auto width() const {
-		assert(!arn.empty() && !arn[0].empty());
-		return arn[0].size();
+		assert(!arn_cntnr.empty() && !arn_cntnr[0].empty());
+		return arn_cntnr[0].size();
 	}
 
 	void add_row(const std::string& row) {
-		if(!arn.empty() && arn.back().size() != row.size()) {
+		if(!arn_cntnr.empty() && arn_cntnr.back().size() != row.size()) {
 			throw std::runtime_error("Arena rows must all be equal length");
 		}
-		arn.push_back(row);
+		arn_cntnr.push_back(row);
 	}
 
-	auto get(size_t col, size_t row) const {
-		return arn[row][col];
-	}
-
-	auto& get(size_t col, size_t row) {
-		return arn[row][col];
-	}
+	auto get(size_t col, size_t row) const {return arn_cntnr[row][col];}
+	auto& get(size_t col, size_t row) {return arn_cntnr[row][col];}
 };
 
 using DistanceType = unsigned int;
-using DistancesContainer = std::vector<std::vector<DistanceType>>;
+using DistanceContainer = std::vector<std::vector<DistanceType>>;
+
 const auto DIST_NONE = std::numeric_limits<DistanceType>::max();
+
 bool dstn_valid(DistanceType dst) {
 	return dst > 0 && dst != DIST_NONE;
 }
+
+class DistanceMap {
+	DistanceContainer dst_cntnr;
+public:
+	DistanceMap() {}
+
+	auto& get_cntnr() {return dst_cntnr;}
+	auto get(size_t col, size_t row) const {return dst_cntnr[row][col];}
+	auto& get(size_t col, size_t row) {return dst_cntnr[row][col];}
+};
 
 class World {
 	ArenaMap arena;
 	FighterContainer fighters;
 
-	void find_distances(DistancesContainer& dists, Pos start) const;
+	void find_distances(DistanceContainer& dists, Pos start) const;
 public:
 	void load(const char*);
 	void run();
 	auto to_string() const;
 };
 
-void World::find_distances(DistancesContainer& dists, Pos start) const {
+void World::find_distances(DistanceContainer& dists, Pos start) const {
 	// Mark all walls as blocked, else init with 0
 	dists.resize(arena.height());
 	const auto width = arena.width();
@@ -154,7 +155,7 @@ auto World::to_string() const {
 		arena_copy.get(fgtr->pos.first, fgtr->pos.second) = fgtr->to_char();
 		ss << fgtr->to_string() << std::endl;
 	}
-	for(const auto& s : arena_copy.get_container())
+	for(const auto& s : arena_copy.get_cntnr())
 		ss << s << std::endl;
 	return ss.str();
 }
@@ -201,7 +202,7 @@ void World::load(const char* input_file) {
 				break;
 			}
 		}
-		if(arena.height() > 0 && arena.get_container().back().size() != arena_row.size()) {
+		if(arena.height() > 0 && arena.get_cntnr().back().size() != arena_row.size()) {
 			throw std::runtime_error("Input lines must all be equal length");
 		}
 		arena.add_row(arena_row);
@@ -209,7 +210,7 @@ void World::load(const char* input_file) {
 	file.close();
 }
 
-auto distances_to_string(const DistancesContainer& dists) {
+auto distances_to_string(const DistanceContainer& dists) {
 	std::stringstream ss;
 	for(const auto& vec : dists) {
 		for(const auto val: vec)
@@ -321,7 +322,7 @@ void World::run() {
 		}
 	};
 
-	DistancesContainer dists;
+	DistanceContainer dists;
 	std::vector<size_t> targets;
 	std::vector<Pos> reachable;
 	std::vector<size_t> attackable;
