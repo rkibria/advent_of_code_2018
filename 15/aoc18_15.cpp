@@ -83,7 +83,7 @@ public:
 		return arn[row][col];
 	}
 
-	auto& get_ref(size_t col, size_t row) {
+	auto& get(size_t col, size_t row) {
 		return arn[row][col];
 	}
 };
@@ -151,7 +151,7 @@ auto World::to_string() const {
 
 	ss << "==== " << fighters.size() << " fighters:" << std::endl;
 	for(const auto& fgtr : fighters) {
-		arena_copy.get_ref(fgtr->pos.first, fgtr->pos.second) = fgtr->to_char();
+		arena_copy.get(fgtr->pos.first, fgtr->pos.second) = fgtr->to_char();
 		ss << fgtr->to_string() << std::endl;
 	}
 	for(const auto& s : arena_copy.get_container())
