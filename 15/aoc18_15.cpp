@@ -73,7 +73,7 @@ public:
 		arn_cntnr.push_back(row);
 	}
 
-	auto get(size_t col, size_t row) const {return arn_cntnr[row][col];}
+	const auto& get(size_t col, size_t  row) const {return arn_cntnr[row][col];}
 	auto& get(size_t col, size_t row) {return arn_cntnr[row][col];}
 };
 
@@ -94,6 +94,7 @@ public:
 	auto& get_cntnr() {return dst_cntnr;}
 	auto get(size_t col, size_t row) const {return dst_cntnr[row][col];}
 	auto& get(size_t col, size_t row) {return dst_cntnr[row][col];}
+
 };
 
 class World {
