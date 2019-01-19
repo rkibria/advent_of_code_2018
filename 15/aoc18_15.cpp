@@ -18,12 +18,17 @@ auto print_vector = [](const auto& v) {
 };
 
 
-using Pos = std::pair<size_t, size_t>;
+struct Pos {
+	size_t x, y;
+};
 
 std::ostream& operator<<(std::ostream& os, const Pos& pos) {
-	os << "(" << pos.first << "," << pos.second << ")";
+	os << "(" << pos.x << "," << pos.y << ")";
 	return os;
 }
+
+inline bool operator==(const Pos& lhs, const Pos& rhs) {return lhs.x == rhs.x && lhs.y == rhs.y;}
+inline bool operator!=(const Pos& lhs, const Pos& rhs) {return !(lhs == rhs);}
 
 
 enum class Race {elf, goblin};
@@ -45,7 +50,7 @@ struct Fighter {
 	auto to_char() const {return (race == Race::elf) ? C_ELF : C_GOBLIN;}
 	auto to_string() const {
 		std::stringstream ss;
-		ss << to_char() << "(" << pos.first << "," << pos.second << ": "
+		ss << to_char() << "(" << pos << ","
 			<< hp << ")"
 			<< (alive() ? "*" : "");
 		return ss.str();
@@ -77,8 +82,10 @@ public:
 		return cntr[0].size();
 	}
 
-	const auto& 	get(size_t col, size_t  row) const {return cntr[row][col];}
-	auto& 		get(size_t col, size_t row) {return cntr[row][col];}
+	const auto& 	get(size_t x, size_t y) const {return cntr[y][x];}
+	auto& 		get(size_t x, size_t y) {return cntr[y][x];}
+	const auto&	get(const Pos& pos) const {return cntr[pos.y][pos.x];}
+	auto&		get(const Pos& pos) {return cntr[pos.y][pos.x];}
 };
 
 
@@ -98,8 +105,8 @@ public:
 	auto& 		get_cntr() {return cntr;}
 	const auto& 	get(size_t x, size_t y) const {return cntr[y][x];}
 	auto& 		get(size_t x, size_t y) {return cntr[y][x];}
-	const auto&	get(const Pos& pos) const {return cntr[pos.second][pos.first];}
-	auto&		get(const Pos& pos) {return cntr[pos.second][pos.first];}
+	const auto&	get(const Pos& pos) const {return cntr[pos.y][pos.x];}
+	auto&		get(const Pos& pos) {return cntr[pos.y][pos.x];}
 	auto 		to_string() const;
 	auto 		valid(size_t x, size_t y) const {return dist_valid(get(x, y));}
 	auto		valid(const Pos& pos) const {return dist_valid(get(pos));}
@@ -164,10 +171,10 @@ void World::find_dists(DistanceMap& dists, Pos start) const {
 				}
 			};
 
-		inc_and_queue(pos.first, pos.second - 1);
-		inc_and_queue(pos.first - 1, pos.second);
-		inc_and_queue(pos.first + 1, pos.second);
-		inc_and_queue(pos.first, pos.second + 1);
+		inc_and_queue(pos.x, pos.y - 1);
+		inc_and_queue(pos.x - 1, pos.y);
+		inc_and_queue(pos.x + 1, pos.y);
+		inc_and_queue(pos.x, pos.y + 1);
 	}
 }
 
@@ -177,7 +184,7 @@ auto World::to_string() const {
 
 	ss << "==== " << fighters.size() << " fighters:" << std::endl;
 	for(const auto& fgtr : fighters) {
-		arena_copy.get(fgtr->pos.first, fgtr->pos.second) = fgtr->to_char();
+		arena_copy.get(fgtr->pos) = fgtr->to_char();
 		ss << fgtr->to_string() << std::endl;
 	}
 	for(const auto& s : arena_copy.get_cntr())
@@ -198,7 +205,7 @@ void World::load(const char* input_file) {
 
 		std::string arena_row;
 		auto current_pos = [ this, &arena_row ]() {
-			return Pos(arena_row.size(), arena.height());
+			return Pos{arena_row.size(), arena.height()};
 			};
 
 		for(auto c : line) {
@@ -237,9 +244,7 @@ void World::load(const char* input_file) {
 
 void World::run() {
 	auto reading_order_pred = [](const auto& a, const auto& b) {
-		return a.second < b.second
-			|| (a.second == b.second
-				&& a.first < b.first);
+		return a.y < b.y || (a.y == b.y	&& a.x < b.x);
 	};
 
 	auto sort_fighters = [&reading_order_pred, this]() {
@@ -282,10 +287,10 @@ void World::run() {
 
 		for(auto fgtr_i : targets) {
 			const auto& pos = fighters[fgtr_i]->pos;
-			add_if_free(pos.first, pos.second - 1);
-			add_if_free(pos.first - 1, pos.second);
-			add_if_free(pos.first + 1, pos.second);
-			add_if_free(pos.first, pos.second + 1);
+			add_if_free(pos.x, pos.y - 1);
+			add_if_free(pos.x - 1, pos.y);
+			add_if_free(pos.x + 1, pos.y);
+			add_if_free(pos.x, pos.y + 1);
 		}
 	};
 
@@ -303,14 +308,14 @@ void World::run() {
 		attackable.clear();
 		for(const auto& dfnr_i : targets) {
 			const auto& dfnr_pos = fighters[dfnr_i]->pos;
-			if((dfnr_pos.first == atkr_pos.first
-				&& dfnr_pos.second == atkr_pos.second - 1)
-				|| (dfnr_pos.first == atkr_pos.first - 1
-				&& dfnr_pos.second == atkr_pos.second)
-				|| (dfnr_pos.first == atkr_pos.first + 1
-				&& dfnr_pos.second == atkr_pos.second)
-				|| (dfnr_pos.first == atkr_pos.first
-				&& dfnr_pos.second == atkr_pos.second + 1))
+			if((dfnr_pos.x == atkr_pos.x
+				&& dfnr_pos.y == atkr_pos.y - 1)
+				|| (dfnr_pos.x == atkr_pos.x - 1
+				&& dfnr_pos.y == atkr_pos.y)
+				|| (dfnr_pos.x == atkr_pos.x + 1
+				&& dfnr_pos.y == atkr_pos.y)
+				|| (dfnr_pos.x == atkr_pos.x
+				&& dfnr_pos.y == atkr_pos.y + 1))
 				attackable.push_back(dfnr_i);
 		}
 	};
@@ -323,10 +328,10 @@ void World::run() {
 				return cur_pos;
 			}
 
-			adjacs[0] = Pos{cur_pos.first, cur_pos.second - 1};
-			adjacs[1] = Pos{cur_pos.first - 1, cur_pos.second};
-			adjacs[2] = Pos{cur_pos.first + 1, cur_pos.second};
-			adjacs[3] = Pos{cur_pos.first, cur_pos.second + 1};
+			adjacs[0] = Pos{cur_pos.x, cur_pos.y - 1};
+			adjacs[1] = Pos{cur_pos.x - 1, cur_pos.y};
+			adjacs[2] = Pos{cur_pos.x + 1, cur_pos.y};
+			adjacs[3] = Pos{cur_pos.x, cur_pos.y + 1};
 			sort_posns_distance(adjacs, dists);
 			cur_pos = adjacs[0];
 		}
@@ -354,12 +359,13 @@ void World::run() {
 			print_vector(targets);
 
 			if(targets.empty()) {
+				std::clog << "NO MORE TARGETS\n";
 				done = true;
 				break;
 			}
 
 			find_dists(dists, atkr->pos);
-			//std::clog << dists_to_string(dists);
+			std::clog << dists.to_string();
 
 			find_attackable(attackable, targets, atkr->pos);
 			if(!attackable.empty()) {
@@ -384,10 +390,7 @@ void World::run() {
 			const auto min_pos = reachable[0];
 			const auto min_dist = dists.get(min_pos);
 			reachable.erase(std::remove_if(reachable.begin(), reachable.end(),
-				[&min_dist, &dists](const auto& pos) {
-					return dists.get(pos) > min_dist;
-					}
-				));
+				[&min_dist, &dists](const auto& pos) {return dists.get(pos) > min_dist;}));
 			sort_posns_reading_order(reachable);
 
 			std::clog << "nearest: ";
