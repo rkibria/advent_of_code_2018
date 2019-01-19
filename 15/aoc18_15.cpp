@@ -62,14 +62,6 @@ class ArenaMap {
 public:
 	ArenaMap() {}
 
-	auto& get_cntr() {return cntr;}
-	auto height() const {return cntr.size();}
-
-	auto width() const {
-		assert(!cntr.empty() && !cntr[0].empty());
-		return cntr[0].size();
-	}
-
 	void add_row(const std::string& row) {
 		if(!cntr.empty() && cntr.back().size() != row.size()) {
 			throw std::runtime_error("Arena rows must all be equal length");
@@ -77,8 +69,16 @@ public:
 		cntr.push_back(row);
 	}
 
+	auto& get_cntr() {return cntr;}
+
+	auto height() const {return cntr.size();}
+	auto width() const {
+		assert(!cntr.empty() && !cntr[0].empty());
+		return cntr[0].size();
+	}
+
 	const auto& 	get(size_t col, size_t  row) const {return cntr[row][col];}
-	auto& get(size_t col, size_t row) {return cntr[row][col];}
+	auto& 		get(size_t col, size_t row) {return cntr[row][col];}
 };
 
 
@@ -91,7 +91,6 @@ bool dist_valid(DistanceType dst) {
 	return dst > 0 && dst != DIST_NONE;
 }
 
-
 class DistanceMap {
 	DistanceContainer cntr;
 public:
@@ -99,6 +98,8 @@ public:
 	auto& 		get_cntr() {return cntr;}
 	const auto& 	get(size_t col, size_t row) const {return cntr[row][col];}
 	auto& 		get(size_t col, size_t row) {return cntr[row][col];}
+	const auto&	get(const Pos& pos) const {return cntr[pos.second][pos.first];}
+	auto&		get(const Pos& pos) {return cntr[pos.second][pos.first];}
 	auto 		to_string() const; 
 };
 
