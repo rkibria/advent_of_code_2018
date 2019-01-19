@@ -96,11 +96,13 @@ class DistanceMap {
 public:
 	DistanceMap() {}
 	auto& 		get_cntr() {return cntr;}
-	const auto& 	get(size_t col, size_t row) const {return cntr[row][col];}
-	auto& 		get(size_t col, size_t row) {return cntr[row][col];}
+	const auto& 	get(size_t x, size_t y) const {return cntr[y][x];}
+	auto& 		get(size_t x, size_t y) {return cntr[y][x];}
 	const auto&	get(const Pos& pos) const {return cntr[pos.second][pos.first];}
 	auto&		get(const Pos& pos) {return cntr[pos.second][pos.first];}
-	auto 		to_string() const; 
+	auto 		to_string() const;
+	auto 		valid(size_t x, size_t y) const {return dist_valid(get(x, y));}
+	auto		valid(const Pos& pos) const {return dist_valid(get(pos));}
 };
 
 auto DistanceMap::to_string() const {
@@ -123,27 +125,27 @@ class World {
 	ArenaMap arena;
 	FighterCntr fighters;
 
-	void find_dists(DistanceContainer& dists, Pos start) const;
+	void find_dists(DistanceMap& dists, Pos start) const;
 public:
 	void load(const char*);
 	void run();
 	auto to_string() const;
 };
 
-void World::find_dists(DistanceContainer& dists, Pos start) const {
+void World::find_dists(DistanceMap& dists, Pos start) const {
 	// Mark all walls as blocked, else init with 0
-	dists.resize(arena.height());
+	dists.get_cntr().resize(arena.height());
 	const auto width = arena.width();
-	for(size_t row_i = 0; row_i < arena.height(); ++row_i) {
-		dists[row_i].resize(width);
-		for(size_t col_i = 0; col_i < width; ++col_i)
-			dists[row_i][col_i] = (arena.get(col_i, row_i) == C_WALL) ? DIST_NONE : 0;
+	for(size_t y = 0; y < arena.height(); ++y) {
+		dists.get_cntr()[y].resize(width);
+		for(size_t x = 0; x < width; ++x)
+			dists.get(x, y) = (arena.get(x, y) == C_WALL) ? DIST_NONE : 0;
 	}
 
 	// Mark all fighter's positions as blocked
 	for(const auto& fgtr : fighters)
 		if(fgtr->alive())
-			dists[fgtr->pos.second][fgtr->pos.first] = DIST_NONE;
+			dists.get(fgtr->pos) = DIST_NONE;
 
 	// Find distances from start position
 	std::deque<Pos> posns(1, start);
@@ -152,12 +154,12 @@ void World::find_dists(DistanceContainer& dists, Pos start) const {
 		const auto pos = posns.front();
 		posns.pop_front();
 		
-		const auto last_dist = dists[pos.second][pos.first];
+		const auto last_dist = dists.get(pos);
 		const auto next_dist = (last_dist == DIST_NONE) ? 1 : (last_dist + 1);
 
 		auto inc_and_queue = [&dists, &posns, &next_dist](size_t x, size_t y) {
-				if(dists[y][x] == 0) {
-					dists[y][x] = next_dist;
+				if(dists.get(x, y) == 0) {
+					dists.get(x, y) = next_dist;
 					posns.push_back(Pos{x, y});
 				}
 			};
@@ -240,7 +242,7 @@ void World::run() {
 				&& a.first < b.first);
 	};
 
-	auto sort_fighters_reading_order = [&reading_order_pred, this]() {
+	auto sort_fighters = [&reading_order_pred, this]() {
 		std::sort(fighters.begin(), fighters.end(),
 			[&reading_order_pred](const std::unique_ptr<Fighter>& a,
 				const std::unique_ptr<Fighter>& b) {
@@ -270,9 +272,9 @@ void World::run() {
 	auto find_reachable = [this](auto& result, const auto& targets, const auto& dists) {
 		result.clear();
 
-		auto add_if_free = [&dists, &result](auto pos_x, auto pos_y) {
-			if(dist_valid(dists[pos_y][pos_x])) {
-				auto pos = Pos{pos_x, pos_y};
+		auto add_if_free = [&dists, &result](auto x, auto y) {
+			if(dists.valid(x, y)) {
+				Pos pos{x, y};
 				if(std::find(result.begin(), result.end(), pos) == result.end())
 					result.push_back(pos);
 			}
@@ -290,8 +292,8 @@ void World::run() {
 	auto sort_posns_distance = [&reading_order_pred](auto& vec, const auto& dists) {
 		std::sort(vec.begin(), vec.end(),
 			[&reading_order_pred, &dists](const auto& a, const auto& b) {
-				const auto dst_a = dists[a.second][a.first];
-				const auto dst_b = dists[b.second][b.first];
+				const auto dst_a = dists.get(a);
+				const auto dst_b = dists.get(b);
 				return dst_a < dst_b
 					|| (dst_a == dst_b && reading_order_pred(a, b));
 			});
@@ -317,7 +319,7 @@ void World::run() {
 		auto cur_pos = target_pos;
 		std::array<Pos, 4> adjacs;
 		while(true) {
-			if(dists[cur_pos.second][cur_pos.first] == 1) {
+			if(dists.get(cur_pos) == 1) {
 				return cur_pos;
 			}
 
@@ -330,14 +332,14 @@ void World::run() {
 		}
 	};
 
-	DistanceContainer dists;
+	DistanceMap dists;
 	std::vector<size_t> targets;
 	std::vector<Pos> reachable;
 	std::vector<size_t> attackable;
 
 	bool done = false;
 	while(!done) {
-		sort_fighters_reading_order();
+		sort_fighters();
 		std::clog << to_string() << std::endl;
 
 		for(size_t atkr_i = 0; atkr_i < fighters.size(); ++atkr_i) {
@@ -380,10 +382,10 @@ void World::run() {
 			print_vector(reachable);
 
 			const auto min_pos = reachable[0];
-			const auto min_dist = dists[min_pos.second][min_pos.first];
+			const auto min_dist = dists.get(min_pos);
 			reachable.erase(std::remove_if(reachable.begin(), reachable.end(),
 				[&min_dist, &dists](const auto& pos) {
-					return dists[pos.second][pos.first] > min_dist;
+					return dists.get(pos) > min_dist;
 					}
 				));
 			sort_posns_reading_order(reachable);
