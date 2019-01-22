@@ -132,27 +132,27 @@ class World {
 	ArenaMap arena;
 	FighterCntr fighters;
 
-	void find_dists(DistanceMap& dists, Pos start) const;
+	void find_dists(DistanceMap& dist_map, Pos start) const;
 public:
 	void load(const char*);
 	void run();
 	auto to_string() const;
 };
 
-void World::find_dists(DistanceMap& dists, Pos start) const {
+void World::find_dists(DistanceMap& dist_map, Pos start) const {
 	// Mark all walls as blocked, else init with 0
-	dists.get_cntr().resize(arena.height());
+	dist_map.get_cntr().resize(arena.height());
 	const auto width = arena.width();
 	for(size_t y = 0; y < arena.height(); ++y) {
-		dists.get_cntr()[y].resize(width);
+		dist_map.get_cntr()[y].resize(width);
 		for(size_t x = 0; x < width; ++x)
-			dists.get(x, y) = (arena.get(x, y) == C_WALL) ? DIST_NONE : 0;
+			dist_map.get(x, y) = (arena.get(x, y) == C_WALL) ? DIST_NONE : 0;
 	}
 
 	// Mark all fighter's positions as blocked
 	for(const auto& fgtr : fighters)
 		if(fgtr->alive())
-			dists.get(fgtr->pos) = DIST_NONE;
+			dist_map.get(fgtr->pos) = DIST_NONE;
 
 	// Find distances from start position
 	std::deque<Pos> posns(1, start);
@@ -161,12 +161,12 @@ void World::find_dists(DistanceMap& dists, Pos start) const {
 		const auto pos = posns.front();
 		posns.pop_front();
 		
-		const auto last_dist = dists.get(pos);
+		const auto last_dist = dist_map.get(pos);
 		const auto next_dist = (last_dist == DIST_NONE) ? 1 : (last_dist + 1);
 
-		auto inc_and_queue = [&dists, &posns, &next_dist](size_t x, size_t y) {
-				if(dists.get(x, y) == 0) {
-					dists.get(x, y) = next_dist;
+		auto inc_and_queue = [&dist_map, &posns, &next_dist](size_t x, size_t y) {
+				if(dist_map.get(x, y) == 0) {
+					dist_map.get(x, y) = next_dist;
 					posns.push_back(Pos{x, y});
 				}
 			};
@@ -274,18 +274,18 @@ void World::run() {
 		}
 	};
 
-	auto find_reachable = [this](auto& result, const auto& targets, const auto& dists) {
+	auto find_reachable = [this](auto& result, const auto& targets_idx_vec, const auto& dist_map) {
 		result.clear();
 
-		auto add_if_free = [&dists, &result](auto x, auto y) {
-			if(dists.valid(x, y)) {
+		auto add_if_free = [&dist_map, &result](auto x, auto y) {
+			if(dist_map.valid(x, y)) {
 				Pos pos{x, y};
 				if(std::find(result.begin(), result.end(), pos) == result.end())
 					result.push_back(pos);
 			}
 		};
 
-		for(auto fgtr_i : targets) {
+		for(auto fgtr_i : targets_idx_vec) {
 			const auto& pos = fighters[fgtr_i]->pos;
 			add_if_free(pos.x, pos.y - 1);
 			add_if_free(pos.x - 1, pos.y);
@@ -294,19 +294,19 @@ void World::run() {
 		}
 	};
 
-	auto sort_posns_distance = [&reading_order_pred](auto& vec, const auto& dists) {
+	auto sort_posns_distance = [&reading_order_pred](auto& vec, const auto& dist_map) {
 		std::sort(vec.begin(), vec.end(),
-			[&reading_order_pred, &dists](const auto& a, const auto& b) {
-				const auto dst_a = dists.get(a);
-				const auto dst_b = dists.get(b);
+			[&reading_order_pred, &dist_map](const auto& a, const auto& b) {
+				const auto dst_a = dist_map.get(a);
+				const auto dst_b = dist_map.get(b);
 				return dst_a < dst_b
 					|| (dst_a == dst_b && reading_order_pred(a, b));
 			});
 	};
 
-	auto find_attackable = [this](auto& attackable, const auto& targets, const auto& atkr_pos) {
-		attackable.clear();
-		for(const auto& dfnr_i : targets) {
+	auto get_adjacent_targets = [this](auto& adjc_tgts_idx_vec, const auto& targets_idx_vec, const auto& atkr_pos) {
+		adjc_tgts_idx_vec.clear();
+		for(const auto& dfnr_i : targets_idx_vec) {
 			const auto& dfnr_pos = fighters[dfnr_i]->pos;
 			if((dfnr_pos.x == atkr_pos.x
 				&& dfnr_pos.y == atkr_pos.y - 1)
@@ -316,15 +316,15 @@ void World::run() {
 				&& dfnr_pos.y == atkr_pos.y)
 				|| (dfnr_pos.x == atkr_pos.x
 				&& dfnr_pos.y == atkr_pos.y + 1))
-				attackable.push_back(dfnr_i);
+				adjc_tgts_idx_vec.push_back(dfnr_i);
 		}
 	};
 
-	auto find_next_step = [&sort_posns_distance](const auto& target_pos, const auto& dists) {
+	auto find_next_step = [&sort_posns_distance](const auto& target_pos, const auto& dist_map) {
 		auto cur_pos = target_pos;
 		std::array<Pos, 4> adjacs;
 		while(true) {
-			if(dists.get(cur_pos) == 1) {
+			if(dist_map.get(cur_pos) == 1) {
 				return cur_pos;
 			}
 
@@ -332,15 +332,15 @@ void World::run() {
 			adjacs[1] = Pos{cur_pos.x - 1, cur_pos.y};
 			adjacs[2] = Pos{cur_pos.x + 1, cur_pos.y};
 			adjacs[3] = Pos{cur_pos.x, cur_pos.y + 1};
-			sort_posns_distance(adjacs, dists);
+			sort_posns_distance(adjacs, dist_map);
 			cur_pos = adjacs[0];
 		}
 	};
 
-	DistanceMap dists;
-	std::vector<size_t> targets;
+	DistanceMap dist_map;
+	std::vector<size_t> targets_idx_vec;
 	std::vector<Pos> reachable;
-	std::vector<size_t> attackable;
+	std::vector<size_t> adjc_tgts_idx_vec;
 
 	bool done = false;
 	while(!done) {
@@ -354,43 +354,43 @@ void World::run() {
 
 			std::clog << "attacking: " << atkr->to_string() << std::endl;
 
-			get_living_enemies(targets, atkr_i);
+			get_living_enemies(targets_idx_vec, atkr_i);
 			std::clog << "viable targets: ";
-			print_vector(targets);
+			print_vector(targets_idx_vec);
 
-			if(targets.empty()) {
+			if(targets_idx_vec.empty()) {
 				std::clog << "NO MORE TARGETS\n";
 				done = true;
 				break;
 			}
 
-			find_dists(dists, atkr->pos);
-			std::clog << dists.to_string();
+			find_dists(dist_map, atkr->pos);
+			std::clog << dist_map.to_string();
 
-			find_attackable(attackable, targets, atkr->pos);
-			if(!attackable.empty()) {
+			get_adjacent_targets(adjc_tgts_idx_vec, targets_idx_vec, atkr->pos);
+			if(!adjc_tgts_idx_vec.empty()) {
 				std::clog << "attack order: ";
-				print_vector(attackable);
+				print_vector(adjc_tgts_idx_vec);
 				throw std::runtime_error("TODO combat");
 				continue;
 			}
 
 			// Get vector of positions adjacent to targets that
 			// can be reached by attacker
-			find_reachable(reachable, targets, dists);
+			find_reachable(reachable, targets_idx_vec, dist_map);
 
 			if(reachable.empty())
 				continue;
 
-			sort_posns_distance(reachable, dists);
+			sort_posns_distance(reachable, dist_map);
 			
 			std::clog << "reachable: ";
 			print_vector(reachable);
 
 			const auto min_pos = reachable[0];
-			const auto min_dist = dists.get(min_pos);
+			const auto min_dist = dist_map.get(min_pos);
 			auto remove_it = std::remove_if(reachable.begin(), reachable.end(),
-				[&min_dist, &dists](const auto& pos) {return dists.get(pos) > min_dist;});
+				[&min_dist, &dist_map](const auto& pos) {return dist_map.get(pos) > min_dist;});
 			reachable.erase(remove_it, reachable.end());
 			sort_posns_reading_order(reachable);
 
@@ -400,7 +400,7 @@ void World::run() {
 			const auto target_pos = reachable[0];
 			std::clog << "target_pos: " << target_pos << std::endl;
 
-			const auto next_pos = find_next_step(target_pos, dists);
+			const auto next_pos = find_next_step(target_pos, dist_map);
 			std::clog << "next: " << next_pos << std::endl;
 		
 			atkr->pos = next_pos;
