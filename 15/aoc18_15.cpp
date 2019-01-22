@@ -389,8 +389,9 @@ void World::run() {
 
 			const auto min_pos = reachable[0];
 			const auto min_dist = dists.get(min_pos);
-			reachable.erase(std::remove_if(reachable.begin(), reachable.end(),
-				[&min_dist, &dists](const auto& pos) {return dists.get(pos) > min_dist;}));
+			auto remove_it = std::remove_if(reachable.begin(), reachable.end(),
+				[&min_dist, &dists](const auto& pos) {return dists.get(pos) > min_dist;});
+			reachable.erase(remove_it, reachable.end());
 			sort_posns_reading_order(reachable);
 
 			std::clog << "nearest: ";
