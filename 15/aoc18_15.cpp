@@ -259,18 +259,18 @@ void World::run() {
 		std::sort(posns.begin(), posns.end(), reading_order_pred);
 	};
 
-	auto find_targets = [this](auto& result, auto fgtr_i) {
+	auto get_living_enemies = [this](auto& out_fgtr_idx_vec, auto fgtr_i) {
 		const auto& fgtr_1 = fighters[fgtr_i];
 		assert(fgtr_1->alive());
 
-		result.clear();
+		out_fgtr_idx_vec.clear();
 		for(size_t fgtr_j = 0; fgtr_j < fighters.size(); ++fgtr_j) {
 			const auto& fgtr_2 = fighters[fgtr_j];
 			if(fgtr_j == fgtr_i
 				|| fgtr_1->race == fgtr_2->race
 				|| !fgtr_2->alive())
 				continue;
-			result.push_back(fgtr_j);
+			out_fgtr_idx_vec.push_back(fgtr_j);
 		}
 	};
 
@@ -354,7 +354,7 @@ void World::run() {
 
 			std::clog << "attacking: " << atkr->to_string() << std::endl;
 
-			find_targets(targets, atkr_i);
+			get_living_enemies(targets, atkr_i);
 			std::clog << "viable targets: ";
 			print_vector(targets);
 
