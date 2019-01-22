@@ -274,18 +274,18 @@ void World::run() {
 		}
 	};
 
-	auto find_reachable = [this](auto& result, const auto& targets_idx_vec, const auto& dist_map) {
-		result.clear();
+	auto get_reachable_posns_adjc_to_tgts = [this](auto& out_pos_vec, const auto& tgts_idx_vec, const auto& dist_map) {
+		out_pos_vec.clear();
 
-		auto add_if_free = [&dist_map, &result](auto x, auto y) {
+		auto add_if_free = [&dist_map, &out_pos_vec](auto x, auto y) {
 			if(dist_map.valid(x, y)) {
 				Pos pos{x, y};
-				if(std::find(result.begin(), result.end(), pos) == result.end())
-					result.push_back(pos);
+				if(std::find(out_pos_vec.begin(), out_pos_vec.end(), pos) == out_pos_vec.end())
+					out_pos_vec.push_back(pos);
 			}
 		};
 
-		for(auto fgtr_i : targets_idx_vec) {
+		for(auto fgtr_i : tgts_idx_vec) {
 			const auto& pos = fighters[fgtr_i]->pos;
 			add_if_free(pos.x, pos.y - 1);
 			add_if_free(pos.x - 1, pos.y);
@@ -304,9 +304,9 @@ void World::run() {
 			});
 	};
 
-	auto get_adjacent_targets = [this](auto& adjc_tgts_idx_vec, const auto& targets_idx_vec, const auto& atkr_pos) {
+	auto get_adjacent_targets = [this](auto& adjc_tgts_idx_vec, const auto& tgts_idx_vec, const auto& atkr_pos) {
 		adjc_tgts_idx_vec.clear();
-		for(const auto& dfnr_i : targets_idx_vec) {
+		for(const auto& dfnr_i : tgts_idx_vec) {
 			const auto& dfnr_pos = fighters[dfnr_i]->pos;
 			if((dfnr_pos.x == atkr_pos.x
 				&& dfnr_pos.y == atkr_pos.y - 1)
@@ -338,8 +338,8 @@ void World::run() {
 	};
 
 	DistanceMap dist_map;
-	std::vector<size_t> targets_idx_vec;
-	std::vector<Pos> reachable;
+	std::vector<size_t> tgts_idx_vec;
+	std::vector<Pos> reachable_pos_vec;
 	std::vector<size_t> adjc_tgts_idx_vec;
 
 	bool done = false;
@@ -354,11 +354,11 @@ void World::run() {
 
 			std::clog << "attacking: " << atkr->to_string() << std::endl;
 
-			get_living_enemies(targets_idx_vec, atkr_i);
+			get_living_enemies(tgts_idx_vec, atkr_i);
 			std::clog << "viable targets: ";
-			print_vector(targets_idx_vec);
+			print_vector(tgts_idx_vec);
 
-			if(targets_idx_vec.empty()) {
+			if(tgts_idx_vec.empty()) {
 				std::clog << "NO MORE TARGETS\n";
 				done = true;
 				break;
@@ -367,7 +367,7 @@ void World::run() {
 			find_dists(dist_map, atkr->pos);
 			std::clog << dist_map.to_string();
 
-			get_adjacent_targets(adjc_tgts_idx_vec, targets_idx_vec, atkr->pos);
+			get_adjacent_targets(adjc_tgts_idx_vec, tgts_idx_vec, atkr->pos);
 			if(!adjc_tgts_idx_vec.empty()) {
 				std::clog << "attack order: ";
 				print_vector(adjc_tgts_idx_vec);
@@ -375,29 +375,27 @@ void World::run() {
 				continue;
 			}
 
-			// Get vector of positions adjacent to targets that
-			// can be reached by attacker
-			find_reachable(reachable, targets_idx_vec, dist_map);
+			get_reachable_posns_adjc_to_tgts(reachable_pos_vec, tgts_idx_vec, dist_map);
 
-			if(reachable.empty())
+			if(reachable_pos_vec.empty())
 				continue;
 
-			sort_posns_distance(reachable, dist_map);
+			sort_posns_distance(reachable_pos_vec, dist_map);
 			
 			std::clog << "reachable: ";
-			print_vector(reachable);
+			print_vector(reachable_pos_vec);
 
-			const auto min_pos = reachable[0];
+			const auto min_pos = reachable_pos_vec[0];
 			const auto min_dist = dist_map.get(min_pos);
-			auto remove_it = std::remove_if(reachable.begin(), reachable.end(),
+			auto remove_it = std::remove_if(reachable_pos_vec.begin(), reachable_pos_vec.end(),
 				[&min_dist, &dist_map](const auto& pos) {return dist_map.get(pos) > min_dist;});
-			reachable.erase(remove_it, reachable.end());
-			sort_posns_reading_order(reachable);
+			reachable_pos_vec.erase(remove_it, reachable_pos_vec.end());
+			sort_posns_reading_order(reachable_pos_vec);
 
 			std::clog << "nearest: ";
-			print_vector(reachable);
+			print_vector(reachable_pos_vec);
 
-			const auto target_pos = reachable[0];
+			const auto target_pos = reachable_pos_vec[0];
 			std::clog << "target_pos: " << target_pos << std::endl;
 
 			const auto next_pos = find_next_step(target_pos, dist_map);
