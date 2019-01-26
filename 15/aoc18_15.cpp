@@ -344,7 +344,11 @@ void World::run() {
 	std::vector<size_t> adjc_tgts_idx_vec;
 
 	bool done = false;
+	int combat_round = 0;
 	while(!done) {
+		combat_round += 1;
+		std::clog << "=== ROUND " << combat_round << std::endl;
+
 		sort_fgtr_cntr_read_order(fighters);
 		std::clog << to_string() << std::endl;
 
@@ -416,6 +420,12 @@ void World::run() {
 			atkr->pos = next_pos;
 		}
 	}
+
+	auto sum_hits = 0;
+	for(const auto& fgtr : fighters)
+		if(fgtr->hp > 0)
+			sum_hits += fgtr->hp;
+	std::clog << "sum of hit points: " << sum_hits << std::endl;
 
 }
 
