@@ -51,6 +51,11 @@ struct Fighter {
 	int hp = 200;
 
 	auto alive() const {return hp > 0;}
+
+	void attack() {
+		hp -= ATTACK_POWER;
+	}
+
 	auto to_char() const {return (race == Race::elf) ? C_ELF : C_GOBLIN;}
 	auto to_string() const {
 		std::stringstream ss;
@@ -375,7 +380,10 @@ void World::run() {
 
 				std::clog << "attack order: ";
 				print_vector(adjc_tgts_idx_vec);
-				throw std::runtime_error("TODO combat");
+
+				auto& dfnr = fighters[adjc_tgts_idx_vec.front()];
+				dfnr->attack();
+
 				continue;
 			}
 
