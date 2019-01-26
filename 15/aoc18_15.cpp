@@ -30,6 +30,14 @@ std::ostream& operator<<(std::ostream& os, const Pos& pos) {
 inline bool operator==(const Pos& lhs, const Pos& rhs) {return lhs.x == rhs.x && lhs.y == rhs.y;}
 inline bool operator!=(const Pos& lhs, const Pos& rhs) {return !(lhs == rhs);}
 
+auto pos_read_order_pdct = [](const auto& a, const auto& b) {
+	return a.y < b.y || (a.y == b.y	&& a.x < b.x);
+};
+
+auto sort_pos_cntr_read_order = [](auto& pos_cntr) {
+	std::sort(pos_cntr.begin(), pos_cntr.end(), pos_read_order_pdct);
+};
+
 
 enum class Race {elf, goblin};
 
@@ -58,6 +66,14 @@ struct Fighter {
 };
 
 using FighterCntr = std::vector<std::unique_ptr<Fighter>>;
+
+auto sort_fgtr_cntr_read_order = [](auto& fighters) {
+	std::sort(fighters.begin(), fighters.end(),
+		[](const std::unique_ptr<Fighter>& a,
+			const std::unique_ptr<Fighter>& b) {
+				return pos_read_order_pdct(a->pos, b->pos);
+			});
+};
 
 
 using ArenaCntr = std::vector<std::string>;
@@ -243,22 +259,6 @@ void World::load(const char* input_file) {
 }
 
 void World::run() {
-	auto reading_order_pred = [](const auto& a, const auto& b) {
-		return a.y < b.y || (a.y == b.y	&& a.x < b.x);
-	};
-
-	auto sort_fighters = [&reading_order_pred, this]() {
-		std::sort(fighters.begin(), fighters.end(),
-			[&reading_order_pred](const std::unique_ptr<Fighter>& a,
-				const std::unique_ptr<Fighter>& b) {
-					return reading_order_pred(a->pos, b->pos);
-				});
-	};
-
-	auto sort_posns_reading_order = [&reading_order_pred](auto& posns) {
-		std::sort(posns.begin(), posns.end(), reading_order_pred);
-	};
-
 	auto get_living_enemies = [this](auto& out_fgtr_idx_vec, auto fgtr_i) {
 		const auto& fgtr_1 = fighters[fgtr_i];
 		assert(fgtr_1->alive());
@@ -294,13 +294,13 @@ void World::run() {
 		}
 	};
 
-	auto sort_posns_distance = [&reading_order_pred](auto& vec, const auto& dist_map) {
+	auto sort_posns_distance = [](auto& vec, const auto& dist_map) {
 		std::sort(vec.begin(), vec.end(),
-			[&reading_order_pred, &dist_map](const auto& a, const auto& b) {
+			[&dist_map](const auto& a, const auto& b) {
 				const auto dst_a = dist_map.get(a);
 				const auto dst_b = dist_map.get(b);
 				return dst_a < dst_b
-					|| (dst_a == dst_b && reading_order_pred(a, b));
+					|| (dst_a == dst_b && pos_read_order_pdct(a, b));
 			});
 	};
 
@@ -344,7 +344,7 @@ void World::run() {
 
 	bool done = false;
 	while(!done) {
-		sort_fighters();
+		sort_fgtr_cntr_read_order(fighters);
 		std::clog << to_string() << std::endl;
 
 		for(size_t atkr_i = 0; atkr_i < fighters.size(); ++atkr_i) {
@@ -390,7 +390,7 @@ void World::run() {
 			auto remove_it = std::remove_if(reachable_pos_vec.begin(), reachable_pos_vec.end(),
 				[&min_dist, &dist_map](const auto& pos) {return dist_map.get(pos) > min_dist;});
 			reachable_pos_vec.erase(remove_it, reachable_pos_vec.end());
-			sort_posns_reading_order(reachable_pos_vec);
+			sort_pos_cntr_read_order(reachable_pos_vec);
 
 			std::clog << "nearest: ";
 			print_vector(reachable_pos_vec);
