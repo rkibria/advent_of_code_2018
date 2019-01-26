@@ -369,6 +369,15 @@ void World::run() {
 
 			get_adjacent_targets(adjc_tgts_idx_vec, tgts_idx_vec, atkr->pos);
 			if(!adjc_tgts_idx_vec.empty()) {
+				std::sort(adjc_tgts_idx_vec.begin(), adjc_tgts_idx_vec.end(),
+					[this](const auto& a, const auto& b) {
+						const auto& fa = fighters[a];
+						const auto& fb = fighters[b];
+						return (fa->hp < fb->hp)
+							|| (fa->hp == fb->hp
+							&& pos_read_order_pdct(fa->pos, fb->pos));
+					});
+
 				std::clog << "attack order: ";
 				print_vector(adjc_tgts_idx_vec);
 				throw std::runtime_error("TODO combat");
