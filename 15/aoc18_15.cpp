@@ -20,6 +20,10 @@ auto print_vector = [](const auto& v) {
 
 struct Pos {
 	size_t x, y;
+
+	bool operator<(const Pos& b) const {
+		return y < b.y || (y == b.y && x < b.x);
+	}
 };
 
 std::ostream& operator<<(std::ostream& os, const Pos& pos) {
@@ -29,14 +33,6 @@ std::ostream& operator<<(std::ostream& os, const Pos& pos) {
 
 inline bool operator==(const Pos& lhs, const Pos& rhs) {return lhs.x == rhs.x && lhs.y == rhs.y;}
 inline bool operator!=(const Pos& lhs, const Pos& rhs) {return !(lhs == rhs);}
-
-auto pos_read_order_pdct = [](const auto& a, const auto& b) {
-	return a.y < b.y || (a.y == b.y	&& a.x < b.x);
-};
-
-auto sort_pos_cntr_read_order = [](auto& pos_cntr) {
-	std::sort(pos_cntr.begin(), pos_cntr.end(), pos_read_order_pdct);
-};
 
 
 enum class Race {elf, goblin};
@@ -71,7 +67,7 @@ auto sort_fgtr_cntr_read_order = [](auto& fighters) {
 	std::sort(fighters.begin(), fighters.end(),
 		[](const std::unique_ptr<Fighter>& a,
 			const std::unique_ptr<Fighter>& b) {
-				return pos_read_order_pdct(a->pos, b->pos);
+				return a->pos < b->pos;
 			});
 };
 
@@ -300,7 +296,7 @@ void World::run() {
 				const auto dst_a = dist_map.get(a);
 				const auto dst_b = dist_map.get(b);
 				return dst_a < dst_b
-					|| (dst_a == dst_b && pos_read_order_pdct(a, b));
+					|| (dst_a == dst_b && a < b);
 			});
 	};
 
@@ -374,8 +370,7 @@ void World::run() {
 						const auto& fa = fighters[a];
 						const auto& fb = fighters[b];
 						return (fa->hp < fb->hp)
-							|| (fa->hp == fb->hp
-							&& pos_read_order_pdct(fa->pos, fb->pos));
+							|| (fa->hp == fb->hp && fa->pos < fb->pos);
 					});
 
 				std::clog << "attack order: ";
@@ -399,7 +394,7 @@ void World::run() {
 			auto remove_it = std::remove_if(reachable_pos_vec.begin(), reachable_pos_vec.end(),
 				[&min_dist, &dist_map](const auto& pos) {return dist_map.get(pos) > min_dist;});
 			reachable_pos_vec.erase(remove_it, reachable_pos_vec.end());
-			sort_pos_cntr_read_order(reachable_pos_vec);
+			std::sort(reachable_pos_vec.begin(), reachable_pos_vec.end());
 
 			std::clog << "nearest: ";
 			print_vector(reachable_pos_vec);
