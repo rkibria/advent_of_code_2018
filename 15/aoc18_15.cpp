@@ -420,6 +420,8 @@ void World::run() {
 		if(fgtr->hp > 0)
 			sum_hits += fgtr->hp;
 	std::clog << "sum of hit points: " << sum_hits << std::endl;
+
+	std::cout << sum_hits * (combat_round - 1) << std::endl;
 }
 
 int main(int argc, char* argv[]) {
