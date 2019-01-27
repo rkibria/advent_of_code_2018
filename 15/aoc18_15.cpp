@@ -10,14 +10,10 @@
 #include <deque>
 #include <limits>
 #include <array>
-
-auto print_vector = [](const auto& v) {
-	for(auto& i : v)
-		std::clog << i << " ";
-	std::clog << std::endl;
-};
+#include <numeric>
 
 using IndexVector = std::vector<size_t>;
+
 
 struct Pos {
 	size_t x, y;
@@ -407,10 +403,9 @@ void World::run() {
 		}
 	}
 
-	auto sum_hits = 0;
-	for(const auto& fgtr : fighters)
-		if(fgtr->hp > 0)
-			sum_hits += fgtr->hp;
+	auto sum_hits = std::accumulate(fighters.begin(), fighters.end(), 0,
+		[](auto a, const auto& fgtr) {return (fgtr->hp > 0) ? a + fgtr->hp : a;}
+		);
 	std::clog << "sum of hit points: " << sum_hits << std::endl;
 
 	std::cout << sum_hits * (combat_round - 1) << std::endl;
