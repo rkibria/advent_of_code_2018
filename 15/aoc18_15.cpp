@@ -37,6 +37,16 @@ inline bool operator!=(const Pos& lhs, const Pos& rhs) {return !(lhs == rhs);}
 
 using PosVector = std::vector<Pos>;
 
+std::array<Pos, 4> get_adjc_pos_arr(const Pos& pos) {
+	return std::array<Pos, 4>{
+		Pos{pos.x, pos.y - 1},
+		Pos{pos.x - 1, pos.y},
+		Pos{pos.x + 1, pos.y},
+		Pos{pos.x, pos.y + 1}
+		};
+}
+
+
 enum class Race {elf, goblin};
 
 const int ATTACK_POWER = 3;
@@ -150,17 +160,12 @@ void DistanceMap::set_dists_from_start(const Pos& start) {
 		const auto last_dist = get(pos);
 		const auto next_dist = (last_dist == DistanceMap::DIST_NONE) ? 1 : (last_dist + 1);
 
-		auto inc_and_queue = [this, &pos_deq, &next_dist](size_t x, size_t y) {
-				if(get(x, y) == 0) {
-					get(x, y) = next_dist;
-					pos_deq.push_back(Pos{x, y});
-				}
-			};
-
-		inc_and_queue(pos.x, pos.y - 1);
-		inc_and_queue(pos.x - 1, pos.y);
-		inc_and_queue(pos.x + 1, pos.y);
-		inc_and_queue(pos.x, pos.y + 1);
+		for(const auto& adjc_pos : get_adjc_pos_arr(pos)) {
+			if(get(adjc_pos) == 0) {
+				get(adjc_pos) = next_dist;
+				pos_deq.push_back(adjc_pos);
+			}
+		}
 	}
 }
 
