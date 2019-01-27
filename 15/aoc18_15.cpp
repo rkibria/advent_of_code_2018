@@ -17,6 +17,7 @@ auto print_vector = [](const auto& v) {
 	std::clog << std::endl;
 };
 
+using IndexVector = std::vector<size_t>;
 
 struct Pos {
 	size_t x, y;
@@ -34,6 +35,7 @@ std::ostream& operator<<(std::ostream& os, const Pos& pos) {
 inline bool operator==(const Pos& lhs, const Pos& rhs) {return lhs.x == rhs.x && lhs.y == rhs.y;}
 inline bool operator!=(const Pos& lhs, const Pos& rhs) {return !(lhs == rhs);}
 
+using PosVector = std::vector<Pos>;
 
 enum class Race {elf, goblin};
 
@@ -144,12 +146,43 @@ auto DistanceMap::to_string() const {
 	return ss.str();
 }
 
+auto sort_pos_cntr_by_dist = [](auto& cntr, const auto& dist_map) {
+	std::sort(cntr.begin(), cntr.end(),
+		[&dist_map](const auto& a, const auto& b) {
+			const auto dst_a = dist_map.get(a);
+			const auto dst_b = dist_map.get(b);
+			return dst_a < dst_b || (dst_a == dst_b && a < b);
+		});
+};
+
+Pos find_next_step(const Pos& target_pos, const DistanceMap& dist_map) {
+	auto cur_pos = target_pos;
+	std::array<Pos, 4> adjacs;
+	while(true) {
+		if(dist_map.get(cur_pos) == 1) {
+			return cur_pos;
+		}
+
+		adjacs[0] = Pos{cur_pos.x, cur_pos.y - 1};
+		adjacs[1] = Pos{cur_pos.x - 1, cur_pos.y};
+		adjacs[2] = Pos{cur_pos.x + 1, cur_pos.y};
+		adjacs[3] = Pos{cur_pos.x, cur_pos.y + 1};
+		sort_pos_cntr_by_dist(adjacs, dist_map);
+		cur_pos = adjacs[0];
+	}
+};
 
 class World {
 	ArenaMap arena;
 	FighterCntr fighters;
 
 	void find_dists(DistanceMap& dist_map, Pos start) const;
+	void get_adjacent_targets(IndexVector& adjc_tgts_idx_vec,
+		const IndexVector& tgts_idx_vec, const Pos& atkr_pos);
+	void get_living_enemies(IndexVector& out_fgtr_idx_vec, size_t fgtr_i);
+	void get_reachable_posns_adjc_to_tgts(PosVector& out_pos_vec,
+		const IndexVector& tgts_idx_vec, const DistanceMap& dist_map);
+
 public:
 	void load(const char*);
 	void run();
@@ -259,89 +292,63 @@ void World::load(const char* input_file) {
 	file.close();
 }
 
+void World::get_living_enemies(IndexVector& out_fgtr_idx_vec, size_t fgtr_i) {
+	const auto& fgtr_1 = fighters[fgtr_i];
+	assert(fgtr_1->alive());
+
+	out_fgtr_idx_vec.clear();
+	for(size_t fgtr_j = 0; fgtr_j < fighters.size(); ++fgtr_j) {
+		const auto& fgtr_2 = fighters[fgtr_j];
+		if(fgtr_j == fgtr_i
+			|| fgtr_1->race == fgtr_2->race
+			|| !fgtr_2->alive())
+			continue;
+		out_fgtr_idx_vec.push_back(fgtr_j);
+	}
+}
+
+void World::get_reachable_posns_adjc_to_tgts(PosVector& out_pos_vec,
+		const IndexVector& tgts_idx_vec, const DistanceMap& dist_map) {
+	out_pos_vec.clear();
+
+	auto add_if_free = [&dist_map, &out_pos_vec](auto x, auto y) {
+		if(dist_map.valid(x, y)) {
+			Pos pos{x, y};
+			if(std::find(out_pos_vec.begin(), out_pos_vec.end(), pos) == out_pos_vec.end())
+				out_pos_vec.push_back(pos);
+		}
+	};
+
+	for(auto fgtr_i : tgts_idx_vec) {
+		const auto& pos = fighters[fgtr_i]->pos;
+		add_if_free(pos.x, pos.y - 1);
+		add_if_free(pos.x - 1, pos.y);
+		add_if_free(pos.x + 1, pos.y);
+		add_if_free(pos.x, pos.y + 1);
+	}
+}
+
+void World::get_adjacent_targets(IndexVector& adjc_tgts_idx_vec, const IndexVector& tgts_idx_vec, const Pos& atkr_pos) {
+	adjc_tgts_idx_vec.clear();
+	for(const auto& dfnr_i : tgts_idx_vec) {
+		const auto& dfnr_pos = fighters[dfnr_i]->pos;
+		if((dfnr_pos.x == atkr_pos.x
+			&& dfnr_pos.y == atkr_pos.y - 1)
+			|| (dfnr_pos.x == atkr_pos.x - 1
+			&& dfnr_pos.y == atkr_pos.y)
+			|| (dfnr_pos.x == atkr_pos.x + 1
+			&& dfnr_pos.y == atkr_pos.y)
+			|| (dfnr_pos.x == atkr_pos.x
+			&& dfnr_pos.y == atkr_pos.y + 1))
+			adjc_tgts_idx_vec.push_back(dfnr_i);
+	}
+}
+
 void World::run() {
-	auto get_living_enemies = [this](auto& out_fgtr_idx_vec, auto fgtr_i) {
-		const auto& fgtr_1 = fighters[fgtr_i];
-		assert(fgtr_1->alive());
-
-		out_fgtr_idx_vec.clear();
-		for(size_t fgtr_j = 0; fgtr_j < fighters.size(); ++fgtr_j) {
-			const auto& fgtr_2 = fighters[fgtr_j];
-			if(fgtr_j == fgtr_i
-				|| fgtr_1->race == fgtr_2->race
-				|| !fgtr_2->alive())
-				continue;
-			out_fgtr_idx_vec.push_back(fgtr_j);
-		}
-	};
-
-	auto get_reachable_posns_adjc_to_tgts = [this](auto& out_pos_vec, const auto& tgts_idx_vec, const auto& dist_map) {
-		out_pos_vec.clear();
-
-		auto add_if_free = [&dist_map, &out_pos_vec](auto x, auto y) {
-			if(dist_map.valid(x, y)) {
-				Pos pos{x, y};
-				if(std::find(out_pos_vec.begin(), out_pos_vec.end(), pos) == out_pos_vec.end())
-					out_pos_vec.push_back(pos);
-			}
-		};
-
-		for(auto fgtr_i : tgts_idx_vec) {
-			const auto& pos = fighters[fgtr_i]->pos;
-			add_if_free(pos.x, pos.y - 1);
-			add_if_free(pos.x - 1, pos.y);
-			add_if_free(pos.x + 1, pos.y);
-			add_if_free(pos.x, pos.y + 1);
-		}
-	};
-
-	auto sort_posns_distance = [](auto& vec, const auto& dist_map) {
-		std::sort(vec.begin(), vec.end(),
-			[&dist_map](const auto& a, const auto& b) {
-				const auto dst_a = dist_map.get(a);
-				const auto dst_b = dist_map.get(b);
-				return dst_a < dst_b
-					|| (dst_a == dst_b && a < b);
-			});
-	};
-
-	auto get_adjacent_targets = [this](auto& adjc_tgts_idx_vec, const auto& tgts_idx_vec, const auto& atkr_pos) {
-		adjc_tgts_idx_vec.clear();
-		for(const auto& dfnr_i : tgts_idx_vec) {
-			const auto& dfnr_pos = fighters[dfnr_i]->pos;
-			if((dfnr_pos.x == atkr_pos.x
-				&& dfnr_pos.y == atkr_pos.y - 1)
-				|| (dfnr_pos.x == atkr_pos.x - 1
-				&& dfnr_pos.y == atkr_pos.y)
-				|| (dfnr_pos.x == atkr_pos.x + 1
-				&& dfnr_pos.y == atkr_pos.y)
-				|| (dfnr_pos.x == atkr_pos.x
-				&& dfnr_pos.y == atkr_pos.y + 1))
-				adjc_tgts_idx_vec.push_back(dfnr_i);
-		}
-	};
-
-	auto find_next_step = [&sort_posns_distance](const auto& target_pos, const auto& dist_map) {
-		auto cur_pos = target_pos;
-		std::array<Pos, 4> adjacs;
-		while(true) {
-			if(dist_map.get(cur_pos) == 1) {
-				return cur_pos;
-			}
-
-			adjacs[0] = Pos{cur_pos.x, cur_pos.y - 1};
-			adjacs[1] = Pos{cur_pos.x - 1, cur_pos.y};
-			adjacs[2] = Pos{cur_pos.x + 1, cur_pos.y};
-			adjacs[3] = Pos{cur_pos.x, cur_pos.y + 1};
-			sort_posns_distance(adjacs, dist_map);
-			cur_pos = adjacs[0];
-		}
-	};
-
 	DistanceMap dist_map;
-	std::vector<size_t> tgts_idx_vec;
-	std::vector<Pos> reachable_pos_vec;
-	std::vector<size_t> adjc_tgts_idx_vec;
+	IndexVector tgts_idx_vec;
+	PosVector reachable_pos_vec;
+	IndexVector adjc_tgts_idx_vec;
 
 	bool done = false;
 	int combat_round = 0;
@@ -396,7 +403,7 @@ void World::run() {
 			if(reachable_pos_vec.empty())
 				continue;
 
-			sort_posns_distance(reachable_pos_vec, dist_map);
+			sort_pos_cntr_by_dist(reachable_pos_vec, dist_map);
 			
 			std::clog << "reachable: ";
 			print_vector(reachable_pos_vec);
