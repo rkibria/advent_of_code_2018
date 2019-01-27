@@ -83,6 +83,7 @@ using ArenaCntr = std::vector<std::string>;
 
 class ArenaMap {
 	ArenaCntr cntr;
+
 public:
 	ArenaMap() {}
 
@@ -123,6 +124,7 @@ class DistanceMap {
 public:
 	DistanceMap() {}
 
+	Pos 		get_next_step(const Pos& target_pos) const;
 	const auto& get(size_t x, size_t y) const {return cntr[y][x];}
 	auto& 		get(size_t x, size_t y) {return cntr[y][x];}
 	const auto&	get(const Pos& pos) const {return cntr[pos.y][pos.x];}
@@ -189,11 +191,11 @@ auto sort_pos_cntr_by_dist = [](auto& cntr, const auto& dist_map) {
 		});
 };
 
-Pos find_next_step(const Pos& target_pos, const DistanceMap& dist_map) {
+Pos DistanceMap::get_next_step(const Pos& target_pos) const {
 	auto cur_pos = target_pos;
 	std::array<Pos, 4> adjacs;
 	while(true) {
-		if(dist_map.get(cur_pos) == 1) {
+		if(get(cur_pos) == 1) {
 			return cur_pos;
 		}
 
@@ -201,7 +203,7 @@ Pos find_next_step(const Pos& target_pos, const DistanceMap& dist_map) {
 		adjacs[1] = Pos{cur_pos.x - 1, cur_pos.y};
 		adjacs[2] = Pos{cur_pos.x + 1, cur_pos.y};
 		adjacs[3] = Pos{cur_pos.x, cur_pos.y + 1};
-		sort_pos_cntr_by_dist(adjacs, dist_map);
+		sort_pos_cntr_by_dist(adjacs, *this);
 		cur_pos = adjacs[0];
 	}
 };
@@ -430,7 +432,7 @@ void World::run() {
 			const auto target_pos = reachable_pos_vec[0];
 			std::clog << "target_pos: " << target_pos << std::endl;
 
-			const auto next_pos = find_next_step(target_pos, dist_map);
+			const auto next_pos = dist_map.get_next_step(target_pos);
 			std::clog << "next: " << next_pos << std::endl;
 		
 			atkr->pos = next_pos;
