@@ -119,17 +119,51 @@ bool dist_valid(DistanceType dst) {
 
 class DistanceMap {
 	DistanceContainer cntr;
+
 public:
 	DistanceMap() {}
-	auto& 		get_cntr() {return cntr;}
-	const auto& 	get(size_t x, size_t y) const {return cntr[y][x];}
+
+	const auto& get(size_t x, size_t y) const {return cntr[y][x];}
 	auto& 		get(size_t x, size_t y) {return cntr[y][x];}
 	const auto&	get(const Pos& pos) const {return cntr[pos.y][pos.x];}
 	auto&		get(const Pos& pos) {return cntr[pos.y][pos.x];}
+	void 		resize(size_t width, size_t height);
+	void		set_dists_from_start(const Pos& start);
 	auto 		to_string() const;
 	auto 		valid(size_t x, size_t y) const {return dist_valid(get(x, y));}
 	auto		valid(const Pos& pos) const {return dist_valid(get(pos));}
 };
+
+void DistanceMap::resize(size_t width, size_t height) {
+	cntr.resize(height);
+	for(size_t y = 0; y < height; ++y) {
+		cntr[y].resize(width);
+	}
+}
+
+void DistanceMap::set_dists_from_start(const Pos& start) {
+	std::deque<Pos> pos_deq(1, start);
+
+	while(!pos_deq.empty()) {
+		const auto pos = pos_deq.front();
+		pos_deq.pop_front();
+
+		const auto last_dist = get(pos);
+		const auto next_dist = (last_dist == DIST_NONE) ? 1 : (last_dist + 1);
+
+		auto inc_and_queue = [this, &pos_deq, &next_dist](size_t x, size_t y) {
+				if(get(x, y) == 0) {
+					get(x, y) = next_dist;
+					pos_deq.push_back(Pos{x, y});
+				}
+			};
+
+		inc_and_queue(pos.x, pos.y - 1);
+		inc_and_queue(pos.x - 1, pos.y);
+		inc_and_queue(pos.x + 1, pos.y);
+		inc_and_queue(pos.x, pos.y + 1);
+	}
+}
 
 auto DistanceMap::to_string() const {
 	std::stringstream ss;
@@ -190,42 +224,15 @@ public:
 };
 
 void World::find_dists(DistanceMap& dist_map, Pos start) const {
-	// Mark all walls as blocked, else init with 0
-	dist_map.get_cntr().resize(arena.height());
-	const auto width = arena.width();
-	for(size_t y = 0; y < arena.height(); ++y) {
-		dist_map.get_cntr()[y].resize(width);
-		for(size_t x = 0; x < width; ++x)
+	for(size_t y = 0; y < arena.height(); ++y)
+		for(size_t x = 0; x < arena.width(); ++x)
 			dist_map.get(x, y) = (arena.get(x, y) == C_WALL) ? DIST_NONE : 0;
-	}
 
-	// Mark all fighter's positions as blocked
 	for(const auto& fgtr : fighters)
 		if(fgtr->alive())
 			dist_map.get(fgtr->pos) = DIST_NONE;
 
-	// Find distances from start position
-	std::deque<Pos> posns(1, start);
-
-	while(!posns.empty()) {
-		const auto pos = posns.front();
-		posns.pop_front();
-		
-		const auto last_dist = dist_map.get(pos);
-		const auto next_dist = (last_dist == DIST_NONE) ? 1 : (last_dist + 1);
-
-		auto inc_and_queue = [&dist_map, &posns, &next_dist](size_t x, size_t y) {
-				if(dist_map.get(x, y) == 0) {
-					dist_map.get(x, y) = next_dist;
-					posns.push_back(Pos{x, y});
-				}
-			};
-
-		inc_and_queue(pos.x, pos.y - 1);
-		inc_and_queue(pos.x - 1, pos.y);
-		inc_and_queue(pos.x + 1, pos.y);
-		inc_and_queue(pos.x, pos.y + 1);
-	}
+	dist_map.set_dists_from_start(start);
 }
 
 auto World::to_string() const {
@@ -328,8 +335,8 @@ void World::get_reachable_posns_adjc_to_tgts(PosVector& out_pos_vec,
 	}
 }
 
-void World::get_adjacent_targets(IndexVector& adjc_tgts_idx_vec, const IndexVector& tgts_idx_vec, const Pos& atkr_pos) {
-	adjc_tgts_idx_vec.clear();
+void World::get_adjacent_targets(IndexVector& out_adjc_tgts_idx_vec, const IndexVector& tgts_idx_vec, const Pos& atkr_pos) {
+	out_adjc_tgts_idx_vec.clear();
 	for(const auto& dfnr_i : tgts_idx_vec) {
 		const auto& dfnr_pos = fighters[dfnr_i]->pos;
 		if((dfnr_pos.x == atkr_pos.x
@@ -340,12 +347,14 @@ void World::get_adjacent_targets(IndexVector& adjc_tgts_idx_vec, const IndexVect
 			&& dfnr_pos.y == atkr_pos.y)
 			|| (dfnr_pos.x == atkr_pos.x
 			&& dfnr_pos.y == atkr_pos.y + 1))
-			adjc_tgts_idx_vec.push_back(dfnr_i);
+			out_adjc_tgts_idx_vec.push_back(dfnr_i);
 	}
 }
 
 void World::run() {
 	DistanceMap dist_map;
+	dist_map.resize(arena.width(), arena.height());
+
 	IndexVector tgts_idx_vec;
 	PosVector reachable_pos_vec;
 	IndexVector adjc_tgts_idx_vec;
