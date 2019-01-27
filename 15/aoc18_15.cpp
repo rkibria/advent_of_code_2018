@@ -368,6 +368,16 @@ void World::run() {
 			});
 	};
 
+	auto check_for_attack = [this, &sort_adjc_tgts_by_attack_order,
+			&adjc_tgts_idx_vec, &tgts_idx_vec](const auto& pos) {
+		get_adjc_tgts(adjc_tgts_idx_vec, tgts_idx_vec, pos);
+		if(!adjc_tgts_idx_vec.empty()) {
+			sort_adjc_tgts_by_attack_order();
+			fighters[adjc_tgts_idx_vec.front()]->attack();
+		}
+		return !adjc_tgts_idx_vec.empty();
+	};
+
 	bool done = false;
 	int combat_round = 0;
 	while(!done) {
@@ -391,21 +401,17 @@ void World::run() {
 
 			find_dists(dist_map, atkr->pos);
 
-			get_adjc_tgts(adjc_tgts_idx_vec, tgts_idx_vec, atkr->pos);
-			if(!adjc_tgts_idx_vec.empty()) {
-				sort_adjc_tgts_by_attack_order();
-				fighters[adjc_tgts_idx_vec.front()]->attack();
+			if(check_for_attack(atkr->pos))
 				continue;
-			}
 
 			get_reachable_posns_adjc_to_tgts(reachable_pos_vec, tgts_idx_vec, dist_map);
 			if(reachable_pos_vec.empty())
 				continue;
 
 			sort_pos_cntr_by_dist(reachable_pos_vec, dist_map);
-			const auto target_pos = reachable_pos_vec[0];
-			const auto next_pos = dist_map.get_next_step(target_pos);
-			atkr->pos = next_pos;
+			atkr->pos = dist_map.get_next_step(reachable_pos_vec.front());
+
+			check_for_attack(atkr->pos);
 		}
 	}
 
@@ -414,7 +420,6 @@ void World::run() {
 		if(fgtr->hp > 0)
 			sum_hits += fgtr->hp;
 	std::clog << "sum of hit points: " << sum_hits << std::endl;
-
 }
 
 int main(int argc, char* argv[]) {
