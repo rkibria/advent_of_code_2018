@@ -210,7 +210,7 @@ class World {
 	FighterCntr fighters;
 
 	void find_dists(DistanceMap& dist_map, Pos start) const;
-	void get_adjacent_targets(IndexVector& adjc_tgts_idx_vec,
+	void get_adjc_tgts(IndexVector& adjc_tgts_idx_vec,
 		const IndexVector& tgts_idx_vec, const Pos& atkr_pos);
 	void get_living_enemies(IndexVector& out_fgtr_idx_vec, size_t fgtr_i);
 	void get_reachable_posns_adjc_to_tgts(PosVector& out_pos_vec,
@@ -240,7 +240,8 @@ auto World::to_string() const {
 
 	ss << "==== " << fighters.size() << " fighters:" << std::endl;
 	for(const auto& fgtr : fighters) {
-		arena_copy.get(fgtr->pos) = fgtr->to_char();
+		if(fgtr->alive())
+			arena_copy.get(fgtr->pos) = fgtr->to_char();
 		ss << fgtr->to_string() << std::endl;
 	}
 	for(const auto& s : arena_copy.get_cntr())
@@ -334,7 +335,7 @@ void World::get_reachable_posns_adjc_to_tgts(PosVector& out_pos_vec,
 	}
 }
 
-void World::get_adjacent_targets(IndexVector& out_adjc_tgts_idx_vec, const IndexVector& tgts_idx_vec, const Pos& atkr_pos) {
+void World::get_adjc_tgts(IndexVector& out_adjc_tgts_idx_vec, const IndexVector& tgts_idx_vec, const Pos& atkr_pos) {
 	out_adjc_tgts_idx_vec.clear();
 	for(const auto& dfnr_i : tgts_idx_vec) {
 		const auto& dfnr_pos = fighters[dfnr_i]->pos;
@@ -358,6 +359,15 @@ void World::run() {
 	PosVector reachable_pos_vec;
 	IndexVector adjc_tgts_idx_vec;
 
+	auto sort_adjc_tgts_by_attack_order = [this, &adjc_tgts_idx_vec]() {
+		std::sort(adjc_tgts_idx_vec.begin(), adjc_tgts_idx_vec.end(),
+			[this](const auto& a, const auto& b) {
+				const auto& fa = fighters[a];
+				const auto& fb = fighters[b];
+				return (fa->hp < fb->hp) || (fa->hp == fb->hp && fa->pos < fb->pos);
+			});
+	};
+
 	bool done = false;
 	int combat_round = 0;
 	while(!done) {
@@ -372,12 +382,7 @@ void World::run() {
 			if(!atkr->alive())
 				continue;
 
-			std::clog << "attacking: " << atkr->to_string() << std::endl;
-
 			get_living_enemies(tgts_idx_vec, atkr_i);
-			std::clog << "viable targets: ";
-			print_vector(tgts_idx_vec);
-
 			if(tgts_idx_vec.empty()) {
 				std::clog << "NO MORE TARGETS\n";
 				done = true;
@@ -385,53 +390,21 @@ void World::run() {
 			}
 
 			find_dists(dist_map, atkr->pos);
-			std::clog << dist_map.to_string();
 
-			get_adjacent_targets(adjc_tgts_idx_vec, tgts_idx_vec, atkr->pos);
+			get_adjc_tgts(adjc_tgts_idx_vec, tgts_idx_vec, atkr->pos);
 			if(!adjc_tgts_idx_vec.empty()) {
-				std::sort(adjc_tgts_idx_vec.begin(), adjc_tgts_idx_vec.end(),
-					[this](const auto& a, const auto& b) {
-						const auto& fa = fighters[a];
-						const auto& fb = fighters[b];
-						return (fa->hp < fb->hp)
-							|| (fa->hp == fb->hp && fa->pos < fb->pos);
-					});
-
-				std::clog << "attack order: ";
-				print_vector(adjc_tgts_idx_vec);
-
-				auto& dfnr = fighters[adjc_tgts_idx_vec.front()];
-				dfnr->attack();
-
+				sort_adjc_tgts_by_attack_order();
+				fighters[adjc_tgts_idx_vec.front()]->attack();
 				continue;
 			}
 
 			get_reachable_posns_adjc_to_tgts(reachable_pos_vec, tgts_idx_vec, dist_map);
-
 			if(reachable_pos_vec.empty())
 				continue;
 
 			sort_pos_cntr_by_dist(reachable_pos_vec, dist_map);
-			
-			std::clog << "reachable: ";
-			print_vector(reachable_pos_vec);
-
-			const auto min_pos = reachable_pos_vec[0];
-			const auto min_dist = dist_map.get(min_pos);
-			auto remove_it = std::remove_if(reachable_pos_vec.begin(), reachable_pos_vec.end(),
-				[&min_dist, &dist_map](const auto& pos) {return dist_map.get(pos) > min_dist;});
-			reachable_pos_vec.erase(remove_it, reachable_pos_vec.end());
-			std::sort(reachable_pos_vec.begin(), reachable_pos_vec.end());
-
-			std::clog << "nearest: ";
-			print_vector(reachable_pos_vec);
-
 			const auto target_pos = reachable_pos_vec[0];
-			std::clog << "target_pos: " << target_pos << std::endl;
-
 			const auto next_pos = dist_map.get_next_step(target_pos);
-			std::clog << "next: " << next_pos << std::endl;
-		
 			atkr->pos = next_pos;
 		}
 	}
@@ -453,7 +426,4 @@ int main(int argc, char* argv[]) {
 	World w;
 	w.load(argv[1]);
 	w.run();
-
-	return 0;
 }
-
