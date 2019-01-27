@@ -37,7 +37,7 @@ inline bool operator!=(const Pos& lhs, const Pos& rhs) {return !(lhs == rhs);}
 
 using PosVector = std::vector<Pos>;
 
-std::array<Pos, 4> get_adjc_pos_arr(const Pos& pos) {
+auto get_adjc_pos_arr(const Pos& pos) {
 	return std::array<Pos, 4>{
 		Pos{pos.x, pos.y - 1},
 		Pos{pos.x - 1, pos.y},
@@ -195,16 +195,12 @@ auto sort_pos_cntr_by_dist = [](auto& cntr, const auto& dist_map) {
 
 Pos DistanceMap::get_next_step(const Pos& target_pos) const {
 	auto cur_pos = target_pos;
-	std::array<Pos, 4> adjacs;
 	while(true) {
 		if(get(cur_pos) == 1) {
 			return cur_pos;
 		}
 
-		adjacs[0] = Pos{cur_pos.x, cur_pos.y - 1};
-		adjacs[1] = Pos{cur_pos.x - 1, cur_pos.y};
-		adjacs[2] = Pos{cur_pos.x + 1, cur_pos.y};
-		adjacs[3] = Pos{cur_pos.x, cur_pos.y + 1};
+		auto adjacs = get_adjc_pos_arr(cur_pos);
 		sort_pos_cntr_by_dist(adjacs, *this);
 		cur_pos = adjacs[0];
 	}
@@ -323,20 +319,13 @@ void World::get_reachable_posns_adjc_to_tgts(PosVector& out_pos_vec,
 		const IndexVector& tgts_idx_vec, const DistanceMap& dist_map) {
 	out_pos_vec.clear();
 
-	auto add_if_free = [&dist_map, &out_pos_vec](auto x, auto y) {
-		if(dist_map.valid(x, y)) {
-			Pos pos{x, y};
-			if(std::find(out_pos_vec.begin(), out_pos_vec.end(), pos) == out_pos_vec.end())
-				out_pos_vec.push_back(pos);
-		}
-	};
-
 	for(auto fgtr_i : tgts_idx_vec) {
 		const auto& pos = fighters[fgtr_i]->pos;
-		add_if_free(pos.x, pos.y - 1);
-		add_if_free(pos.x - 1, pos.y);
-		add_if_free(pos.x + 1, pos.y);
-		add_if_free(pos.x, pos.y + 1);
+
+		for(const auto& adjc_pos : get_adjc_pos_arr(pos))
+			if(dist_map.valid(adjc_pos))
+				if(std::find(out_pos_vec.begin(), out_pos_vec.end(), adjc_pos) == out_pos_vec.end())
+					out_pos_vec.push_back(adjc_pos);
 	}
 }
 
@@ -344,15 +333,13 @@ void World::get_adjc_tgts(IndexVector& out_adjc_tgts_idx_vec, const IndexVector&
 	out_adjc_tgts_idx_vec.clear();
 	for(const auto& dfnr_i : tgts_idx_vec) {
 		const auto& dfnr_pos = fighters[dfnr_i]->pos;
-		if((dfnr_pos.x == atkr_pos.x
-			&& dfnr_pos.y == atkr_pos.y - 1)
-			|| (dfnr_pos.x == atkr_pos.x - 1
-			&& dfnr_pos.y == atkr_pos.y)
-			|| (dfnr_pos.x == atkr_pos.x + 1
-			&& dfnr_pos.y == atkr_pos.y)
-			|| (dfnr_pos.x == atkr_pos.x
-			&& dfnr_pos.y == atkr_pos.y + 1))
-			out_adjc_tgts_idx_vec.push_back(dfnr_i);
+
+		for(const auto& adjc_pos : get_adjc_pos_arr(atkr_pos)) {
+			if(dfnr_pos == adjc_pos) {
+				out_adjc_tgts_idx_vec.push_back(dfnr_i);
+				break;
+			}
+		}
 	}
 }
 
