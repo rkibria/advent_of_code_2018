@@ -112,18 +112,15 @@ public:
 using DistanceType = unsigned int;
 using DistanceContainer = std::vector<std::vector<DistanceType>>;
 
-const auto DIST_NONE = std::numeric_limits<DistanceType>::max();
-
-bool dist_valid(DistanceType dst) {
-	return dst > 0 && dst != DIST_NONE;
-}
-
 class DistanceMap {
 	DistanceContainer cntr;
 
 public:
 	DistanceMap() {}
 
+	static const auto DIST_NONE = std::numeric_limits<DistanceType>::max();
+
+	bool 		dist_is_valid(DistanceType dst) const {return dst > 0 && dst != DIST_NONE;}
 	Pos 		get_next_step(const Pos& target_pos) const;
 	const auto& get(size_t x, size_t y) const {return cntr[y][x];}
 	auto& 		get(size_t x, size_t y) {return cntr[y][x];}
@@ -132,8 +129,8 @@ public:
 	void 		resize(size_t width, size_t height);
 	void		set_dists_from_start(const Pos& start);
 	auto 		to_string() const;
-	auto 		valid(size_t x, size_t y) const {return dist_valid(get(x, y));}
-	auto		valid(const Pos& pos) const {return dist_valid(get(pos));}
+	auto 		valid(size_t x, size_t y) const {return dist_is_valid(get(x, y));}
+	auto		valid(const Pos& pos) const {return dist_is_valid(get(pos));}
 };
 
 void DistanceMap::resize(size_t width, size_t height) {
@@ -151,7 +148,7 @@ void DistanceMap::set_dists_from_start(const Pos& start) {
 		pos_deq.pop_front();
 
 		const auto last_dist = get(pos);
-		const auto next_dist = (last_dist == DIST_NONE) ? 1 : (last_dist + 1);
+		const auto next_dist = (last_dist == DistanceMap::DIST_NONE) ? 1 : (last_dist + 1);
 
 		auto inc_and_queue = [this, &pos_deq, &next_dist](size_t x, size_t y) {
 				if(get(x, y) == 0) {
@@ -171,7 +168,7 @@ auto DistanceMap::to_string() const {
 	std::stringstream ss;
 	for(const auto& vec : cntr) {
 		for(const auto val: vec)
-			if(val == DIST_NONE) {
+			if(val == DistanceMap::DIST_NONE) {
 				ss << "#\t";
 			}
 			else {
@@ -228,11 +225,11 @@ public:
 void World::find_dists(DistanceMap& dist_map, Pos start) const {
 	for(size_t y = 0; y < arena.height(); ++y)
 		for(size_t x = 0; x < arena.width(); ++x)
-			dist_map.get(x, y) = (arena.get(x, y) == C_WALL) ? DIST_NONE : 0;
+			dist_map.get(x, y) = (arena.get(x, y) == C_WALL) ? DistanceMap::DIST_NONE : 0;
 
 	for(const auto& fgtr : fighters)
 		if(fgtr->alive())
-			dist_map.get(fgtr->pos) = DIST_NONE;
+			dist_map.get(fgtr->pos) = DistanceMap::DIST_NONE;
 
 	dist_map.set_dists_from_start(start);
 }
