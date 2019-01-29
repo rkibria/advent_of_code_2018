@@ -58,10 +58,10 @@ struct Fighter {
 
 	auto alive() const {return hp > 0;}
 
-	static int elf_attack_power;
+	static int elf_atk_pwr;
 
 	void damage() {
-		const int other_atk_pwr = (race == Race::goblin) ? elf_attack_power : 3;
+		const int other_atk_pwr = (race == Race::goblin) ? elf_atk_pwr : 3;
 		hp -= other_atk_pwr;
 	}
 
@@ -75,7 +75,7 @@ struct Fighter {
 	}
 };
 
-int Fighter::elf_attack_power = 3;
+int Fighter::elf_atk_pwr = 3;
 
 using FighterCntr = std::vector<std::unique_ptr<Fighter>>;
 
@@ -429,8 +429,25 @@ int main(int argc, char* argv[]) {
 		return -1;
 	}
 
-	World w;
-	w.load(argv[1]);
-	std::clog << w.num_living_elves() << std::endl;
-	w.run();
+	// PART 1
+	{
+		World w;
+		w.load(argv[1]);
+		std::clog << w.num_living_elves() << std::endl;
+		w.run();
+		std::clog << w.num_living_elves() << std::endl;
+	}
+
+	// PART 2
+	int alive_elves_before, alive_elves_after;
+	int cur_elf_atk_pwr = 3;
+	do {
+		Fighter::elf_atk_pwr = ++cur_elf_atk_pwr;
+		World w;
+		w.load(argv[1]);
+		alive_elves_before = w.num_living_elves();
+		w.run();
+		alive_elves_after = w.num_living_elves();
+		std::clog << "pwr " << cur_elf_atk_pwr << ": " << alive_elves_after << std::endl;
+	} while(alive_elves_before != alive_elves_after);
 }
