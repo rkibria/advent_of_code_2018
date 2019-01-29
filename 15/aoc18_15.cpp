@@ -45,8 +45,6 @@ auto get_adjc_pos_arr(const Pos& pos) {
 
 enum class Race {elf, goblin};
 
-const int ATTACK_POWER = 3;
-
 const auto C_EMPTY = '.';
 const auto C_WALL = '#';
 const auto C_ELF = 'E';
@@ -60,8 +58,11 @@ struct Fighter {
 
 	auto alive() const {return hp > 0;}
 
-	void attack() {
-		hp -= ATTACK_POWER;
+	static int elf_attack_power;
+
+	void damage() {
+		const int other_atk_pwr = (race == Race::goblin) ? elf_attack_power : 3;
+		hp -= other_atk_pwr;
 	}
 
 	auto to_char() const {return (race == Race::elf) ? C_ELF : C_GOBLIN;}
@@ -73,6 +74,8 @@ struct Fighter {
 		return ss.str();
 	}
 };
+
+int Fighter::elf_attack_power = 3;
 
 using FighterCntr = std::vector<std::unique_ptr<Fighter>>;
 
@@ -215,9 +218,15 @@ class World {
 
 public:
 	void load(const char*);
-	void run();
+	void run(bool verbose=false);
 	auto to_string() const;
+	auto num_living_elves() const;
 };
+
+auto World::num_living_elves() const {
+	return std::accumulate(fighters.begin(), fighters.end(), 0,
+		[](auto a, const auto& fgtr) {return (fgtr->hp > 0 && fgtr->race == Race::elf) ? a + 1 : a;});
+}
 
 void World::find_dists(DistanceMap& dist_map, Pos start) const {
 	for(size_t y = 0; y < arena.height(); ++y)
@@ -339,7 +348,7 @@ void World::get_adjc_tgts(IndexVector& out_adjc_tgts_idx_vec, const IndexVector&
 	}
 }
 
-void World::run() {
+void World::run(bool verbose) {
 	DistanceMap dist_map;
 	dist_map.resize(arena.width(), arena.height());
 
@@ -361,7 +370,7 @@ void World::run() {
 		get_adjc_tgts(adjc_tgts_idx_vec, tgts_idx_vec, pos);
 		if(!adjc_tgts_idx_vec.empty()) {
 			sort_adjc_tgts_by_attack_order();
-			fighters[adjc_tgts_idx_vec.front()]->attack();
+			fighters[adjc_tgts_idx_vec.front()]->damage();
 		}
 		return !adjc_tgts_idx_vec.empty();
 	};
@@ -370,10 +379,12 @@ void World::run() {
 	int combat_round = 0;
 	while(!done) {
 		combat_round += 1;
-		std::clog << "=== ROUND " << combat_round << std::endl;
+		if(verbose)
+			std::clog << "=== ROUND " << combat_round << std::endl;
 
 		sort_fgtr_cntr_read_order(fighters);
-		std::clog << to_string() << std::endl;
+		if(verbose)
+			std::clog << to_string() << std::endl;
 
 		for(size_t atkr_i = 0; atkr_i < fighters.size(); ++atkr_i) {
 			auto& atkr = fighters[atkr_i];
@@ -382,7 +393,8 @@ void World::run() {
 
 			get_living_enemies(tgts_idx_vec, atkr_i);
 			if(tgts_idx_vec.empty()) {
-				std::clog << "NO MORE TARGETS\n";
+				if(verbose)
+					std::clog << "NO MORE TARGETS\n";
 				done = true;
 				break;
 			}
@@ -404,9 +416,9 @@ void World::run() {
 	}
 
 	auto sum_hits = std::accumulate(fighters.begin(), fighters.end(), 0,
-		[](auto a, const auto& fgtr) {return (fgtr->hp > 0) ? a + fgtr->hp : a;}
-		);
-	std::clog << "sum of hit points: " << sum_hits << std::endl;
+		[](auto a, const auto& fgtr) {return (fgtr->hp > 0) ? a + fgtr->hp : a;});
+	if(verbose)
+		std::clog << "sum of hit points: " << sum_hits << std::endl;
 
 	std::cout << sum_hits * (combat_round - 1) << std::endl;
 }
@@ -419,5 +431,6 @@ int main(int argc, char* argv[]) {
 
 	World w;
 	w.load(argv[1]);
+	std::clog << w.num_living_elves() << std::endl;
 	w.run();
 }
