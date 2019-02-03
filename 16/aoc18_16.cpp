@@ -49,6 +49,8 @@ public:
 	const RegType& 	get(size_t reg_i) const {return regs[reg_i];}
 	RegType& 		get(size_t reg_i) {return regs[reg_i];}
 
+	RegArray& get_regs() {return regs;}
+
 private:
 	RegArray regs;
 };
@@ -91,6 +93,7 @@ int main(int argc, char* argv[]) {
 	}
 
 	// PART 1
+	int three_or_more_opcodes = 0;
 	std::ifstream file(argv[1]);
 	if(file.is_open())
 	{
@@ -108,7 +111,7 @@ int main(int argc, char* argv[]) {
 			if(token != "Before:")
 				break;
 
-			std::clog << line << std::endl;
+			// std::cout << line << std::endl;
 
 
 			Device::RegArray regs_before;
@@ -138,7 +141,7 @@ int main(int argc, char* argv[]) {
 			iss.str(line);
 
 			iss >> token;
-			Device::RegType opcode = stoi(token);
+			// Device::RegType opcode = stoi(token);
 
 			iss >> token;
 			inst.a = stoi(token);
@@ -176,9 +179,21 @@ int main(int argc, char* argv[]) {
 			token.pop_back();
 			regs_after[3] = stoi(token);
 
+			Device dev;
+			int matches = 0;
+			for(int i = 0; i < 16; ++i) {
+				dev.get_regs() = regs_before;
+				inst.op = static_cast<Device::Opcode>(i);
+				dev.execute(inst);
+				if(dev.get_regs() == regs_after)
+					++matches;
+			}
+			if(matches >= 3)
+				++three_or_more_opcodes;
+
 		}
 		file.close();
 	}
 
-
+	std::cout << three_or_more_opcodes << std::endl;
 }
