@@ -46,6 +46,9 @@ public:
 
 	void execute(const Instr& inst);
 
+	const RegType& 	get(size_t reg_i) const {return regs[reg_i];}
+	RegType& 		get(size_t reg_i) {return regs[reg_i];}
+
 private:
 	RegArray regs;
 };
@@ -82,14 +85,100 @@ void Device::execute(const Instr& inst) {
 }
 
 int main(int argc, char* argv[]) {
-	/*
 	if(argc < 2) {
 		std::cout << "Usage: " << argv[0] << " <input file>" << std::endl;
 		return -1;
 	}
-	*/
 
 	// PART 1
-	Device d;
+	std::ifstream file(argv[1]);
+	if(file.is_open())
+	{
+		std::string line;
+
+		while(getline(file, line))
+		{
+			if(line.empty())
+				continue;
+
+			std::istringstream iss(line);
+
+			std::string token;
+			iss >> token;
+			if(token != "Before:")
+				break;
+
+			std::clog << line << std::endl;
+
+
+			Device::RegArray regs_before;
+
+			iss >> token;
+			token.pop_back();
+			token.erase(0, 1);
+			regs_before[0] = stoi(token);
+
+			iss >> token;
+			token.pop_back();
+			regs_before[1] = stoi(token);
+
+			iss >> token;
+			token.pop_back();
+			regs_before[2] = stoi(token);
+
+			iss >> token;
+			token.pop_back();
+			regs_before[3] = stoi(token);
+
+
+			Device::Instr inst;
+
+			getline(file, line);
+			iss.clear();
+			iss.str(line);
+
+			iss >> token;
+			Device::RegType opcode = stoi(token);
+
+			iss >> token;
+			inst.a = stoi(token);
+
+			iss >> token;
+			inst.b = stoi(token);
+
+			iss >> token;
+			inst.c = stoi(token);
+
+
+			getline(file, line);
+			iss.clear();
+			iss.str(line);
+
+			Device::RegArray regs_after;
+
+			iss >> token;
+			assert(token == "After:");
+
+			iss >> token;
+			token.pop_back();
+			token.erase(0, 1);
+			regs_after[0] = stoi(token);
+
+			iss >> token;
+			token.pop_back();
+			regs_after[1] = stoi(token);
+
+			iss >> token;
+			token.pop_back();
+			regs_after[2] = stoi(token);
+
+			iss >> token;
+			token.pop_back();
+			regs_after[3] = stoi(token);
+
+		}
+		file.close();
+	}
+
 
 }
