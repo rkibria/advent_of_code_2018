@@ -86,23 +86,27 @@ void Device::execute(const Instr& inst) {
 	}
 }
 
-int main(int argc, char* argv[]) {
-	if(argc < 2) {
-		std::cout << "Usage: " << argv[0] << " <input file>" << std::endl;
-		return -1;
-	}
+struct Sample {
+	Device::RegArray regs_before;
+	Device::Instr inst;
+	Device::RegArray regs_after;
+};
 
-	// PART 1
-	int three_or_more_opcodes = 0;
-	std::ifstream file(argv[1]);
+using SampleVector = std::vector<Sample>;
+
+SampleVector load(const char* filename) {
+	SampleVector smpl_vec;
+
+	std::ifstream file(filename);
 	if(file.is_open())
 	{
 		std::string line;
-
 		while(getline(file, line))
 		{
 			if(line.empty())
 				continue;
+
+			Sample smpl;
 
 			std::istringstream iss(line);
 
@@ -111,89 +115,79 @@ int main(int argc, char* argv[]) {
 			if(token != "Before:")
 				break;
 
-			// std::cout << line << std::endl;
-
-
-			Device::RegArray regs_before;
-
-			iss >> token;
-			token.pop_back();
-			token.erase(0, 1);
-			regs_before[0] = stoi(token);
-
-			iss >> token;
-			token.pop_back();
-			regs_before[1] = stoi(token);
-
-			iss >> token;
-			token.pop_back();
-			regs_before[2] = stoi(token);
-
-			iss >> token;
-			token.pop_back();
-			regs_before[3] = stoi(token);
-
-
-			Device::Instr inst;
-
-			getline(file, line);
-			iss.clear();
-			iss.str(line);
-
-			iss >> token;
-			// Device::RegType opcode = stoi(token);
-
-			iss >> token;
-			inst.a = stoi(token);
-
-			iss >> token;
-			inst.b = stoi(token);
-
-			iss >> token;
-			inst.c = stoi(token);
+			for(auto i = 0; i <= 3; ++i) {
+				iss >> token;
+				token.pop_back();
+				if(i == 0)
+					token.erase(0, 1);
+				smpl.regs_before[i] = stoi(token);
+			}
 
 
 			getline(file, line);
 			iss.clear();
 			iss.str(line);
 
-			Device::RegArray regs_after;
+			iss >> token;
+			smpl.inst.op = static_cast<Device::Opcode>(stoi(token));
+
+			iss >> token;
+			smpl.inst.a = stoi(token);
+
+			iss >> token;
+			smpl.inst.b = stoi(token);
+
+			iss >> token;
+			smpl.inst.c = stoi(token);
+
+
+			getline(file, line);
+			iss.clear();
+			iss.str(line);
 
 			iss >> token;
 			assert(token == "After:");
 
-			iss >> token;
-			token.pop_back();
-			token.erase(0, 1);
-			regs_after[0] = stoi(token);
-
-			iss >> token;
-			token.pop_back();
-			regs_after[1] = stoi(token);
-
-			iss >> token;
-			token.pop_back();
-			regs_after[2] = stoi(token);
-
-			iss >> token;
-			token.pop_back();
-			regs_after[3] = stoi(token);
-
-			Device dev;
-			int matches = 0;
-			for(int i = 0; i < 16; ++i) {
-				dev.get_regs() = regs_before;
-				inst.op = static_cast<Device::Opcode>(i);
-				dev.execute(inst);
-				if(dev.get_regs() == regs_after)
-					++matches;
+			for(auto i = 0; i <= 3; ++i) {
+				iss >> token;
+				token.pop_back();
+				if(i == 0)
+					token.erase(0, 1);
+				smpl.regs_after[i] = stoi(token);
 			}
-			if(matches >= 3)
-				++three_or_more_opcodes;
 
+			smpl_vec.push_back(smpl);
 		}
 		file.close();
 	}
 
+	return smpl_vec;
+}
+
+int main(int argc, char* argv[]) {
+	if(argc < 2) {
+		std::cout << "Usage: " << argv[0] << " <input file>" << std::endl;
+		return -1;
+	}
+
+	const auto smpl_vec = load(argv[1]);
+	std::clog << "num samples: " << smpl_vec.size() << std::endl;
+
+	// PART 1
+	auto three_or_more_opcodes = 0;
+	for(const auto& smpl : smpl_vec) {
+		Device dev;
+		auto matches = 0;
+		for(auto i = 0; i < 16; ++i) {
+			dev.get_regs() = smpl.regs_before;
+			auto inst = smpl.inst;
+			inst.op = static_cast<Device::Opcode>(i);
+			dev.execute(inst);
+			if(dev.get_regs() == smpl.regs_after)
+				++matches;
+		}
+		if(matches >= 3)
+			++three_or_more_opcodes;
+	}
 	std::cout << three_or_more_opcodes << std::endl;
 }
