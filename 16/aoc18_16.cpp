@@ -240,7 +240,7 @@ void part_1(const SampleVector& smpl_vec) {
 	std::cout << three_or_more_opcodes << std::endl;
 }
 
-void part_2(const SampleVector& smpl_vec) {
+OpcodeMap map_encodings(const SampleVector& smpl_vec) {
 	OpcodeMap opmap;
 	do {
 		std::vector<std::vector<Device::Opcode>> possible_maps(Device::num_opcodes());
@@ -256,18 +256,16 @@ void part_2(const SampleVector& smpl_vec) {
 			}
 		}
 		for(size_t i=0; i < possible_maps.size(); ++i) {
-			std::clog << i << ": ";
-			for(auto& op : possible_maps[i])
-				std::clog << op << " ";
-			std::clog << std::endl;
 			if(possible_maps[i].size() == 1) {
-				std::clog << "- assign " << i << " -> " << possible_maps[i].front() << std::endl;
 				opmap.map_encoding_to_opcode(i, possible_maps[i].front());
 			}
 		}
-
-		std::clog << "found opcodes: " << opmap.num_mapped() << std::endl;
 	} while(opmap.num_mapped() < Device::num_opcodes());
+	return opmap;
+}
+
+void part_2(const SampleVector& smpl_vec) {
+	auto opmap = map_encodings(smpl_vec);
 }
 
 int main(int argc, char* argv[]) {
