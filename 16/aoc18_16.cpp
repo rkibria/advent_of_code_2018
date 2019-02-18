@@ -175,6 +175,31 @@ std::tuple<SampleVector, InstrVector> load(const char* filename) {
 
 			smpl_vec.push_back(smpl);
 		}
+
+		do {
+			if(line.empty())
+				continue;
+
+			Device::Instr inst;
+			std::istringstream iss(line);
+
+			std::string token;
+
+			iss >> token;
+			inst.op = static_cast<Device::Opcode>(stoi(token));
+
+			iss >> token;
+			inst.a = stoi(token);
+
+			iss >> token;
+			inst.b = stoi(token);
+
+			iss >> token;
+			inst.c = stoi(token);
+
+			instr_vec.push_back(inst);
+		} while(getline(file, line));
+
 		file.close();
 	}
 
@@ -200,8 +225,8 @@ public:
 
 	auto num_mapped() const {return mapped_count;}
 
-	Device::Opcode get(int encoding) const {return opcodes[encoding];}
-	auto get(Device::Opcode opcode) const {return encodings[opcode_to_int(opcode)];}
+	Device::Opcode get_mapped_opcode(int encoding) const {return opcodes[encoding];}
+	auto get_mapped_encoding(Device::Opcode opcode) const {return encodings[opcode_to_int(opcode)];}
 
 	bool is_encoding_mapped(int encoding) {return opcodes[encoding] != Device::Opcode::nop;}
 	bool is_opcode_mapped(Device::Opcode opcode) {return encodings[opcode_to_int(opcode)] != NO_ENCODING;}
@@ -269,6 +294,15 @@ OpcodeMap map_encodings(const SampleVector& smpl_vec) {
 
 void part_2(const SampleVector& smpl_vec, const InstrVector& instr_vec) {
 	auto opmap = map_encodings(smpl_vec);
+	auto mapped_instr_vec = instr_vec;
+	for(auto& inst : mapped_instr_vec) {
+		inst.op = opmap.get_mapped_opcode(opcode_to_int(inst.op));
+	}
+	Device dev;
+	for(const auto& inst : mapped_instr_vec) {
+		dev.execute(inst);
+	}
+	std::cout << dev.get(0) << std::endl;
 }
 
 int main(int argc, char* argv[]) {
