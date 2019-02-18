@@ -171,6 +171,8 @@ SampleVector load(const char* filename) {
 }
 
 
+using OpcodeVector = std::vector<Device::Opcode>;
+
 class OpcodeMap {
 private:
 	std::array<Device::Opcode, Device::num_opcodes()> opcodes;
@@ -200,7 +202,23 @@ public:
 		opcodes[encoding] = opcode;
 		encodings[opcode_to_int(opcode)] = encoding;
 	}
+
+	static OpcodeVector get_matching_opcodes(const Sample& smpl);
 };
+
+OpcodeVector OpcodeMap::get_matching_opcodes(const Sample& smpl) {
+	OpcodeVector ops;
+	Device dev;
+	for(auto i = 0; i < 16; ++i) {
+		dev.get_regs() = smpl.regs_before;
+		auto inst = smpl.inst;
+		inst.op = static_cast<Device::Opcode>(i);
+		dev.execute(inst);
+		if(dev.get_regs() == smpl.regs_after)
+			ops.push_back(inst.op);
+	}
+	return ops;
+}
 
 
 int main(int argc, char* argv[]) {
@@ -215,17 +233,8 @@ int main(int argc, char* argv[]) {
 	// PART 1
 	auto three_or_more_opcodes = 0;
 	for(const auto& smpl : smpl_vec) {
-		Device dev;
-		auto matches = 0;
-		for(auto i = 0; i < 16; ++i) {
-			dev.get_regs() = smpl.regs_before;
-			auto inst = smpl.inst;
-			inst.op = static_cast<Device::Opcode>(i);
-			dev.execute(inst);
-			if(dev.get_regs() == smpl.regs_after)
-				++matches;
-		}
-		if(matches >= 3)
+		const auto matches = OpcodeMap::get_matching_opcodes(smpl);
+		if(matches.size() >= 3)
 			++three_or_more_opcodes;
 	}
 	std::cout << three_or_more_opcodes << std::endl;
