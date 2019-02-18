@@ -242,16 +242,32 @@ void part_1(const SampleVector& smpl_vec) {
 
 void part_2(const SampleVector& smpl_vec) {
 	OpcodeMap opmap;
-	for(const auto& smpl : smpl_vec) {
-		auto matches = OpcodeMap::get_matching_opcodes(smpl);
-		matches.erase(std::remove_if(matches.begin(), matches.end(), [&opmap](auto opcode) {return opmap.is_opcode_mapped(opcode);}), matches.end());
-		if(matches.size() == 1) {
-			std::clog << "- assign " << opcode_to_int(smpl.inst.op) << " -> " << matches[0] << std::endl;
-			if(!opmap.is_opcode_mapped(matches[0]))
-				opmap.map_encoding_to_opcode(opcode_to_int(smpl.inst.op), matches[0]);
+	do {
+		std::vector<std::vector<Device::Opcode>> possible_maps(Device::num_opcodes());
+		for(const auto& smpl : smpl_vec) {
+			auto matches = OpcodeMap::get_matching_opcodes(smpl);
+			matches.erase(std::remove_if(matches.begin(), matches.end(), [&opmap](auto opcode) {return opmap.is_opcode_mapped(opcode);}), matches.end());
+			if(matches.size() == 1) {
+				const auto encoding = opcode_to_int(smpl.inst.op);
+				auto& ops = possible_maps[encoding];
+				const auto opcode = matches[0];
+				if(std::find(ops.begin(), ops.end(), opcode) == ops.end())
+					ops.push_back(opcode);
+			}
 		}
-	}
-	std::clog << "found opcodes: " << opmap.num_mapped() << std::endl;
+		for(size_t i=0; i < possible_maps.size(); ++i) {
+			std::clog << i << ": ";
+			for(auto& op : possible_maps[i])
+				std::clog << op << " ";
+			std::clog << std::endl;
+			if(possible_maps[i].size() == 1) {
+				std::clog << "- assign " << i << " -> " << possible_maps[i].front() << std::endl;
+				opmap.map_encoding_to_opcode(i, possible_maps[i].front());
+			}
+		}
+
+		std::clog << "found opcodes: " << opmap.num_mapped() << std::endl;
+	} while(opmap.num_mapped() < Device::num_opcodes());
 }
 
 int main(int argc, char* argv[]) {
