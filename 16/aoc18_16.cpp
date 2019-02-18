@@ -61,6 +61,13 @@ private:
 	RegArray regs;
 };
 
+constexpr auto opcode_to_int(Device::Opcode opcode) {return static_cast<int>(opcode);}
+
+auto& operator<<(std::ostream& os, const Device::Opcode& opcode) {
+	os << "op_" << opcode_to_int(opcode);
+	return os;
+}
+
 void Device::execute(const Instr& inst) {
 	assert(inst.c >= 0 && inst.c <= 3);
 
@@ -173,32 +180,34 @@ SampleVector load(const char* filename) {
 
 using OpcodeVector = std::vector<Device::Opcode>;
 
+constexpr auto NO_ENCODING = Device::num_opcodes();
+
 class OpcodeMap {
 private:
 	std::array<Device::Opcode, Device::num_opcodes()> opcodes;
 	std::array<int, Device::num_opcodes()> encodings;
-	int num_assigned = 0;
+	int mapped_count = 0;
 
 public:
-	static constexpr auto unassigned_encoding = Device::num_opcodes();
-
 	OpcodeMap() {
 		std::fill(opcodes.begin(), opcodes.end(), Device::Opcode::nop);
-		std::fill(encodings.begin(), encodings.end(), unassigned_encoding);
+		std::fill(encodings.begin(), encodings.end(), NO_ENCODING);
 	}
 
-	auto assigned() const {return num_assigned;}
-
-	static constexpr auto opcode_to_int(Device::Opcode opcode) {return static_cast<int>(opcode);}
+	auto num_mapped() const {return mapped_count;}
 
 	Device::Opcode get(int encoding) const {return opcodes[encoding];}
 	auto get(Device::Opcode opcode) const {return encodings[opcode_to_int(opcode)];}
 
-	void map(int encoding, Device::Opcode opcode) {
-		if(opcodes[encoding] != Device::Opcode::nop)
+	bool is_encoding_mapped(int encoding) {return opcodes[encoding] != Device::Opcode::nop;}
+	bool is_opcode_mapped(Device::Opcode opcode) {return encodings[opcode_to_int(opcode)] != NO_ENCODING;}
+
+	void map_encoding_to_opcode(int encoding, Device::Opcode opcode) {
+		assert(encoding >=0 && encoding < Device::num_opcodes());
+		if(is_encoding_mapped(encoding))
 			throw std::runtime_error("Opcode already mapped");
 
-		++num_assigned;
+		++mapped_count;
 		opcodes[encoding] = opcode;
 		encodings[opcode_to_int(opcode)] = encoding;
 	}
@@ -230,6 +239,19 @@ void part_1(const SampleVector& smpl_vec) {
 	std::cout << three_or_more_opcodes << std::endl;
 }
 
+void part_2(const SampleVector& smpl_vec) {
+	OpcodeMap opmap;
+	for(const auto& smpl : smpl_vec) {
+		const auto matches = OpcodeMap::get_matching_opcodes(smpl);
+		if(matches.size() == 1) {
+			std::clog << "- assign " << opcode_to_int(smpl.inst.op) << " -> " << matches[0] << std::endl;
+			if(!opmap.is_opcode_mapped(matches[0]))
+				opmap.map_encoding_to_opcode(opcode_to_int(smpl.inst.op), matches[0]);
+		}
+	}
+	std::clog << "found opcodes: " << opmap.num_mapped() << std::endl;
+}
+
 int main(int argc, char* argv[]) {
 	if(argc < 2) {
 		std::cout << "Usage: " << argv[0] << " <input file>" << std::endl;
@@ -239,6 +261,6 @@ int main(int argc, char* argv[]) {
 	const auto smpl_vec = load(argv[1]);
 	std::clog << "num samples: " << smpl_vec.size() << std::endl;
 
-	part_1(smpl_vec);
-
+	// part_1(smpl_vec);
+	part_2(smpl_vec);
 }
