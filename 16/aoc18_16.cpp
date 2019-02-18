@@ -5,6 +5,7 @@
 #include <fstream>
 #include <sstream>
 #include <array>
+#include <algorithm>
 
 class Device {
 public:
@@ -242,7 +243,8 @@ void part_1(const SampleVector& smpl_vec) {
 void part_2(const SampleVector& smpl_vec) {
 	OpcodeMap opmap;
 	for(const auto& smpl : smpl_vec) {
-		const auto matches = OpcodeMap::get_matching_opcodes(smpl);
+		auto matches = OpcodeMap::get_matching_opcodes(smpl);
+		matches.erase(std::remove_if(matches.begin(), matches.end(), [&opmap](auto opcode) {return opmap.is_opcode_mapped(opcode);}), matches.end());
 		if(matches.size() == 1) {
 			std::clog << "- assign " << opcode_to_int(smpl.inst.op) << " -> " << matches[0] << std::endl;
 			if(!opmap.is_opcode_mapped(matches[0]))
