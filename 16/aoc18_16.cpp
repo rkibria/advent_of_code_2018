@@ -220,6 +220,15 @@ OpcodeVector OpcodeMap::get_matching_opcodes(const Sample& smpl) {
 	return ops;
 }
 
+void part_1(const SampleVector& smpl_vec) {
+	auto three_or_more_opcodes = 0;
+	for(const auto& smpl : smpl_vec) {
+		const auto matches = OpcodeMap::get_matching_opcodes(smpl);
+		if(matches.size() >= 3)
+			++three_or_more_opcodes;
+	}
+	std::cout << three_or_more_opcodes << std::endl;
+}
 
 int main(int argc, char* argv[]) {
 	if(argc < 2) {
@@ -230,12 +239,6 @@ int main(int argc, char* argv[]) {
 	const auto smpl_vec = load(argv[1]);
 	std::clog << "num samples: " << smpl_vec.size() << std::endl;
 
-	// PART 1
-	auto three_or_more_opcodes = 0;
-	for(const auto& smpl : smpl_vec) {
-		const auto matches = OpcodeMap::get_matching_opcodes(smpl);
-		if(matches.size() >= 3)
-			++three_or_more_opcodes;
-	}
-	std::cout << three_or_more_opcodes << std::endl;
+	part_1(smpl_vec);
+
 }
