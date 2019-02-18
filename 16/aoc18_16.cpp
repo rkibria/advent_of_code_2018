@@ -6,6 +6,7 @@
 #include <sstream>
 #include <array>
 #include <algorithm>
+#include <tuple>
 
 class Device {
 public:
@@ -107,9 +108,11 @@ struct Sample {
 };
 
 using SampleVector = std::vector<Sample>;
+using InstrVector = std::vector<Device::Instr>;
 
-SampleVector load(const char* filename) {
+std::tuple<SampleVector, InstrVector> load(const char* filename) {
 	SampleVector smpl_vec;
+	InstrVector instr_vec;
 
 	std::ifstream file(filename);
 	if(file.is_open())
@@ -175,7 +178,7 @@ SampleVector load(const char* filename) {
 		file.close();
 	}
 
-	return smpl_vec;
+	return std::tuple<SampleVector, InstrVector>{smpl_vec, instr_vec};
 }
 
 
@@ -264,7 +267,7 @@ OpcodeMap map_encodings(const SampleVector& smpl_vec) {
 	return opmap;
 }
 
-void part_2(const SampleVector& smpl_vec) {
+void part_2(const SampleVector& smpl_vec, const InstrVector& instr_vec) {
 	auto opmap = map_encodings(smpl_vec);
 }
 
@@ -274,9 +277,13 @@ int main(int argc, char* argv[]) {
 		return -1;
 	}
 
-	const auto smpl_vec = load(argv[1]);
-	std::clog << "num samples: " << smpl_vec.size() << std::endl;
+	SampleVector smpl_vec;
+	InstrVector instr_vec;
+	tie(smpl_vec, instr_vec) = load(argv[1]);
 
-	// part_1(smpl_vec);
-	part_2(smpl_vec);
+	std::clog << "num samples: " << smpl_vec.size() << std::endl;
+	std::clog << "test program length: " << instr_vec.size() << std::endl;
+
+	part_1(smpl_vec);
+	part_2(smpl_vec, instr_vec);
 }
