@@ -32,8 +32,14 @@ public:
 
 		eqir,
 		eqri,
-		eqrr
+		eqrr,
+
+		nop
 	};
+
+	static constexpr int num_opcodes() {
+		return static_cast<int>(Opcode::nop);
+	}
 
 	using RegType = int;
 
@@ -163,6 +169,39 @@ SampleVector load(const char* filename) {
 
 	return smpl_vec;
 }
+
+
+class OpcodeMap {
+private:
+	std::array<Device::Opcode, Device::num_opcodes()> opcodes;
+	std::array<int, Device::num_opcodes()> encodings;
+	int num_assigned = 0;
+
+public:
+	static constexpr auto unassigned_encoding = Device::num_opcodes();
+
+	OpcodeMap() {
+		std::fill(opcodes.begin(), opcodes.end(), Device::Opcode::nop);
+		std::fill(encodings.begin(), encodings.end(), unassigned_encoding);
+	}
+
+	auto assigned() const {return num_assigned;}
+
+	static constexpr auto opcode_to_int(Device::Opcode opcode) {return static_cast<int>(opcode);}
+
+	Device::Opcode get(int encoding) const {return opcodes[encoding];}
+	auto get(Device::Opcode opcode) const {return encodings[opcode_to_int(opcode)];}
+
+	void map(int encoding, Device::Opcode opcode) {
+		if(opcodes[encoding] != Device::Opcode::nop)
+			throw std::runtime_error("Opcode already mapped");
+
+		++num_assigned;
+		opcodes[encoding] = opcode;
+		encodings[opcode_to_int(opcode)] = encoding;
+	}
+};
+
 
 int main(int argc, char* argv[]) {
 	if(argc < 2) {
