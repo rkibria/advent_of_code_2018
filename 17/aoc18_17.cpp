@@ -91,8 +91,18 @@ void Ground::fill_water(size_t x, size_t y) {
 
 	tile = GroundKind::water;
 
-	if(y < height - 1)
+	if(y < height - 1) {
 		fill_water(x, y + 1);
+
+		if(get(x, y + 1) == GroundKind::clay) {
+			if(x > 0)
+				fill_water(x - 1, y);
+
+			if(x < width - 1)
+				fill_water(x + 1, y);
+		}
+	}
+
 }
 
 
@@ -111,7 +121,7 @@ int main(int argc, char* argv[]) {
 	std::clog << gnd << std::endl;
 
 	gnd.run_water(4);
-	gnd.run_water(1);
+	// gnd.run_water(1);
 
 	std::clog << gnd << std::endl;
 }
