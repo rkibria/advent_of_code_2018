@@ -26,6 +26,9 @@ public:
 	auto get(size_t x, size_t y) const {return gnd[y * width + x];}
 	auto& get(size_t x, size_t y) {return gnd[y * width + x];}
 
+	void set_vrtcl_clay(size_t x, size_t start_y, size_t end_y);
+	void set_hzntl_clay(size_t y, size_t start_x, size_t end_x);
+
 	friend std::ostream& operator<<(std::ostream& os, const Ground& gnd);
 };
 
@@ -45,8 +48,20 @@ Ground::Ground(size_t w, size_t h)
 	: width(w),
 	height(h),
 	gnd(w * h, GroundKind::sand) {
+	assert(w > 0 && h > 0);
 }
 
+void Ground::set_vrtcl_clay(size_t x, size_t start_y, size_t end_y) {
+	assert(start_y < end_y);
+	for(auto y = start_y; y <= end_y; ++y)
+		get(x, y) = GroundKind::clay;
+}
+
+void Ground::set_hzntl_clay(size_t y, size_t start_x, size_t end_x) {
+	assert(start_x < end_x);
+	for(auto x = start_x; x <= end_x; ++x)
+		get(x, y) = GroundKind::clay;
+}
 
 int main(int argc, char* argv[]) {
 	if(argc < 2) {
@@ -55,6 +70,9 @@ int main(int argc, char* argv[]) {
 	}
 
 	Ground gnd(10, 10);
+	gnd.set_vrtcl_clay(2, 3, 7);
+	gnd.set_vrtcl_clay(6, 3, 7);
+	gnd.set_hzntl_clay(7, 2, 6);
 	std::clog << gnd << std::endl;
 
 }
