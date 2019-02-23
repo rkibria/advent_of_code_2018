@@ -20,14 +20,27 @@ private:
 	size_t width, height;
 	GroundVector gnd;
 
+	void fill_water(size_t x, size_t y);
+
 public:
 	Ground(size_t w, size_t h);
 
-	auto get(size_t x, size_t y) const {return gnd[y * width + x];}
-	auto& get(size_t x, size_t y) {return gnd[y * width + x];}
+	auto get(size_t x, size_t y) const {
+		assert(x < width);
+		assert(y < height);
+		return gnd[y * width + x];
+	}
+
+	auto& get(size_t x, size_t y) {
+		assert(x < width);
+		assert(y < height);
+		return gnd[y * width + x];
+	}
 
 	void set_vrtcl_clay(size_t x, size_t start_y, size_t end_y);
 	void set_hzntl_clay(size_t y, size_t start_x, size_t end_x);
+
+	void run_water(size_t spring_x);
 
 	friend std::ostream& operator<<(std::ostream& os, const Ground& gnd);
 };
@@ -63,6 +76,26 @@ void Ground::set_hzntl_clay(size_t y, size_t start_x, size_t end_x) {
 		get(x, y) = GroundKind::clay;
 }
 
+void Ground::run_water(size_t spring_x) {
+	fill_water(spring_x, 0);
+}
+
+void Ground::fill_water(size_t x, size_t y) {
+	auto& tile = get(x, y);
+
+	if(tile == GroundKind::clay || tile == GroundKind::water)
+		return;
+
+	std::clog << x << "," << y << std::endl;
+	assert(tile == GroundKind::sand);
+
+	tile = GroundKind::water;
+
+	if(y < height - 1)
+		fill_water(x, y + 1);
+}
+
+
 int main(int argc, char* argv[]) {
 	if(argc < 2) {
 		std::cout << "Usage: " << argv[0] << " <input file>" << std::endl;
@@ -70,9 +103,15 @@ int main(int argc, char* argv[]) {
 	}
 
 	Ground gnd(10, 10);
+
 	gnd.set_vrtcl_clay(2, 3, 7);
 	gnd.set_vrtcl_clay(6, 3, 7);
 	gnd.set_hzntl_clay(7, 2, 6);
+
 	std::clog << gnd << std::endl;
 
+	gnd.run_water(4);
+	gnd.run_water(1);
+
+	std::clog << gnd << std::endl;
 }
