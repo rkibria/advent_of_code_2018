@@ -94,12 +94,33 @@ void Ground::fill_water(size_t x, size_t y) {
 	if(y < height - 1) {
 		fill_water(x, y + 1);
 
-		if(get(x, y + 1) == GroundKind::clay) {
-			if(x > 0)
+		const auto below = get(x, y + 1);
+		if(below == GroundKind::clay) {
+			if(x > 0) {
 				fill_water(x - 1, y);
+
+				const auto left = get(x - 1, y);
+				if(left == GroundKind::clay && y > 0) {
+					fill_water(x, y - 1);
+				}
+			}
 
 			if(x < width - 1)
 				fill_water(x + 1, y);
+		}
+		else if(below == GroundKind::water) {
+			if(x > 0) {
+				if(x < width - 1) {
+					const auto right = get(x + 1, y);
+					if(right == GroundKind::water)
+						fill_water(x - 1, y);
+				}
+
+				const auto left = get(x - 1, y);
+				if(left == GroundKind::clay && y > 0) {
+					fill_water(x, y - 1);
+				}
+			}
 		}
 	}
 
