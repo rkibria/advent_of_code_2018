@@ -223,6 +223,8 @@ void part_1(const std::vector<Scan>& scans) {
 			gnd.set_vrtcl_clay(scn.coord - x_range.first, scn.start - y_range.first, scn.end - y_range.first);
 	}
 
+	gnd.run_water(500 - x_range.first);
+
 	std::cout << gnd << std::endl;
 }
 
