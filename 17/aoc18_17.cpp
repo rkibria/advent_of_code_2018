@@ -4,6 +4,7 @@
 #include <cassert>
 #include <fstream>
 #include <sstream>
+#include <algorithm>
 
 using GroundType = char;
 
@@ -164,21 +165,41 @@ auto load(const char* filename) {
 	return scans;
 }
 
+void part_1(const std::vector<Scan>& scans) {
+	auto scans_which_are_hzntl = [&scans](bool is_hzntl) {
+		std::vector<Scan> out_vec(scans.size());
+		auto it = std::copy_if(scans.begin(), scans.end(), out_vec.begin(),
+			[is_hzntl](const Scan& scn) {return scn.is_hzntl == is_hzntl;});
+		out_vec.resize(std::distance(out_vec.begin(), it));
+		return out_vec;
+	};
+
+	auto minimum_start = [](const auto& vec_scans) {
+		return (*std::min_element(vec_scans.begin(), vec_scans.end(),
+			[](const Scan& a, const Scan& b) {return a.start < b.start;})).start;
+	};
+
+	auto maximum_end = [](const auto& vec_scans) {
+		return (*std::max_element(vec_scans.begin(), vec_scans.end(),
+			[](const Scan& a, const Scan& b) {return a.end < b.end;})).end;
+	};
+
+	auto hzntl_scans = scans_which_are_hzntl(true);
+	auto vrtcl_scans = scans_which_are_hzntl(false);
+
+	const size_t min_hzntl_scan_x = minimum_start(hzntl_scans);
+	const size_t max_hzntl_scan_x = maximum_end(hzntl_scans);
+	std::clog << "hzntl_scan_x: " << min_hzntl_scan_x << " -> " << max_hzntl_scan_x << std::endl;
+}
+
 int main(int argc, char* argv[]) {
 	if(argc < 2) {
 		std::cout << "Usage: " << argv[0] << " <input file>" << std::endl;
 		return -1;
 	}
 
-	const auto scans = load(argv[1]);
+	auto scans = load(argv[1]);
 	std::clog << "scans: " << scans.size() << std::endl;
 
-	Ground gnd(10, 10);
-
-	gnd.set_vrtcl_clay(2, 3, 7);
-	gnd.set_vrtcl_clay(6, 3, 7);
-	gnd.set_hzntl_clay(7, 2, 6);
-	gnd.run_water(4);
-
-	std::clog << gnd << std::endl;
+	part_1(scans);
 }
