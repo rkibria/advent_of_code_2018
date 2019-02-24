@@ -144,6 +144,19 @@ auto load(const char* filename) {
 
 			std::string token;
 			iss >> token;
+			token.pop_back();
+
+			scn.is_hzntl = (token[0] == 'y');
+
+			token = token.substr(2);
+			scn.coord = stoi(token);
+
+			iss >> token;
+			token = token.substr(2);
+			const auto dots = token.find("..");
+			assert(dots != std::string::npos);
+			scn.start = stoi(token.substr(0, dots));
+			scn.end = stoi(token.substr(dots + 2));
 
 			scans.emplace_back(scn);
 		}
