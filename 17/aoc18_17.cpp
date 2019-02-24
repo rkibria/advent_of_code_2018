@@ -215,6 +215,14 @@ void part_1(const std::vector<Scan>& scans) {
 	std::clog << "ground area: " << gnd_width << "x" << gnd_height << std::endl;
 
 	Ground gnd(gnd_width, gnd_height);
+
+	for(const auto& scn : scans) {
+		if(scn.is_hzntl)
+			gnd.set_hzntl_clay(scn.coord - y_range.first, scn.start - x_range.first, scn.end - x_range.first);
+		else
+			gnd.set_vrtcl_clay(scn.coord - x_range.first, scn.start - y_range.first, scn.end - y_range.first);
+	}
+
 	std::cout << gnd << std::endl;
 }
 
