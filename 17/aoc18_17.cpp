@@ -199,14 +199,16 @@ void part_1(const std::vector<Scan>& scans) {
 
 	const std::pair<size_t, size_t> hzntl_x_range{minimum_start(hzntl_scans), maximum_end(hzntl_scans)};
 	const std::pair<size_t, size_t> hzntl_y_range{minimum_coord(hzntl_scans), maximum_coord(hzntl_scans)};
-	std::clog << "hzntl_x_range: " << hzntl_x_range.first << " -> " << hzntl_x_range.second << std::endl;
-	std::clog << "hzntl_y_range: " << hzntl_y_range.first << " -> " << hzntl_y_range.second << std::endl;
 
 	const std::pair<size_t, size_t> vrtcl_x_range{minimum_coord(vrtcl_scans), maximum_coord(vrtcl_scans)};
 	const std::pair<size_t, size_t> vrtcl_y_range{minimum_start(vrtcl_scans), maximum_end(vrtcl_scans)};
-	std::clog << "vrtcl_x_range: " << vrtcl_x_range.first << " -> " << vrtcl_x_range.second << std::endl;
-	std::clog << "vrtcl_y_range: " << vrtcl_y_range.first << " -> " << vrtcl_y_range.second << std::endl;
 
+	const std::pair<size_t, size_t> x_range{std::min(hzntl_x_range.first, vrtcl_x_range.first),
+		std::max(hzntl_x_range.second, vrtcl_x_range.second)};
+	const std::pair<size_t, size_t> y_range{std::min(hzntl_y_range.first, vrtcl_y_range.first),
+		std::max(hzntl_y_range.second, vrtcl_y_range.second)};
+	std::clog << "x range: " << x_range.first << " -> " << x_range.second << std::endl;
+	std::clog << "y range: " << y_range.first << " -> " << y_range.second << std::endl;
 }
 
 int main(int argc, char* argv[]) {
