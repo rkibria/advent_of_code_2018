@@ -86,41 +86,35 @@ void Ground::fill_water(size_t x, size_t y) {
 	if(tile == GroundKind::clay || tile == GroundKind::water)
 		return;
 
-	std::clog << x << "," << y << std::endl;
 	assert(tile == GroundKind::sand);
-
 	tile = GroundKind::water;
 
+	auto flow_down = [this, x, y]() {fill_water(x, y + 1);};
+	auto flow_up = [this, x, y]() {fill_water(x, y - 1);};
+	auto flow_left = [this, x, y]() {fill_water(x - 1, y);};
+	auto flow_right = [this, x, y]() {fill_water(x + 1, y);};
+
 	if(y < height - 1) {
-		fill_water(x, y + 1);
-
 		const auto below = get(x, y + 1);
-		if(below == GroundKind::clay) {
+		if(below == GroundKind::clay || below == GroundKind::water) {
 			if(x > 0) {
-				fill_water(x - 1, y);
-
 				const auto left = get(x - 1, y);
-				if(left == GroundKind::clay && y > 0) {
-					fill_water(x, y - 1);
-				}
+				if(left == GroundKind::clay && y > 0)
+					flow_up();
+				else
+					flow_left();
 			}
 
-			if(x < width - 1)
-				fill_water(x + 1, y);
+			if(x < width - 1) {
+				const auto right = get(x + 1, y);
+				if(right == GroundKind::clay && y > 0)
+					flow_up();
+				else
+					flow_right();
+			}
 		}
-		else if(below == GroundKind::water) {
-			if(x > 0) {
-				if(x < width - 1) {
-					const auto right = get(x + 1, y);
-					if(right == GroundKind::water)
-						fill_water(x - 1, y);
-				}
-
-				const auto left = get(x - 1, y);
-				if(left == GroundKind::clay && y > 0) {
-					fill_water(x, y - 1);
-				}
-			}
+		else {
+			flow_down();
 		}
 	}
 
@@ -138,11 +132,7 @@ int main(int argc, char* argv[]) {
 	gnd.set_vrtcl_clay(2, 3, 7);
 	gnd.set_vrtcl_clay(6, 3, 7);
 	gnd.set_hzntl_clay(7, 2, 6);
-
-	std::clog << gnd << std::endl;
-
 	gnd.run_water(4);
-	// gnd.run_water(1);
 
 	std::clog << gnd << std::endl;
 }
