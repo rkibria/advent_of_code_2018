@@ -50,7 +50,7 @@ public:
 std::ostream& operator<<(std::ostream& os, const Ground& gnd) {
 	os << "Ground(" << gnd.width << "x" << gnd.height << ")" << std::endl;
 	for(size_t y = 0; y < gnd.height; ++y) {
-		for(size_t x = 0; x < gnd.height; ++x) {
+		for(size_t x = 0; x < gnd.width; ++x) {
 			os << static_cast<char>(gnd.get(x, y));
 		}
 		os << std::endl;
@@ -209,6 +209,13 @@ void part_1(const std::vector<Scan>& scans) {
 		std::max(hzntl_y_range.second, vrtcl_y_range.second)};
 	std::clog << "x range: " << x_range.first << " -> " << x_range.second << std::endl;
 	std::clog << "y range: " << y_range.first << " -> " << y_range.second << std::endl;
+
+	const auto gnd_width = x_range.second - x_range.first + 1;
+	const auto gnd_height = y_range.second - y_range.first + 1;
+	std::clog << "ground area: " << gnd_width << "x" << gnd_height << std::endl;
+
+	Ground gnd(gnd_width, gnd_height);
+	std::cout << gnd << std::endl;
 }
 
 int main(int argc, char* argv[]) {
