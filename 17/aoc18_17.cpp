@@ -3,6 +3,7 @@
 #include <string>
 #include <cassert>
 #include <fstream>
+#include <sstream>
 
 using GroundType = char;
 
@@ -117,15 +118,47 @@ void Ground::fill_water(size_t x, size_t y) {
 			flow_down();
 		}
 	}
-
 }
 
+struct Scan {
+	bool is_hzntl;
+	size_t coord;
+	size_t start;
+	size_t end;
+};
+
+auto load(const char* filename) {
+	std::vector<Scan> scans;
+	std::ifstream file(filename);
+	if(file.is_open())
+	{
+		std::string line;
+		while(getline(file, line))
+		{
+			if(line.empty())
+				continue;
+
+			Scan scn;
+
+			std::istringstream iss(line);
+
+			std::string token;
+			iss >> token;
+
+			scans.emplace_back(scn);
+		}
+	}
+	return scans;
+}
 
 int main(int argc, char* argv[]) {
 	if(argc < 2) {
 		std::cout << "Usage: " << argv[0] << " <input file>" << std::endl;
 		return -1;
 	}
+
+	const auto scans = load(argv[1]);
+	std::clog << "scans: " << scans.size() << std::endl;
 
 	Ground gnd(10, 10);
 
