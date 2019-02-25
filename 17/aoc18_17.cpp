@@ -9,6 +9,7 @@
 using GroundType = char;
 
 enum class GroundKind : GroundType {
+	none = ' ',
 	sand = '.',
 	clay = '#',
 	water = '~',
@@ -28,9 +29,10 @@ public:
 	Ground(size_t w, size_t h);
 
 	auto get(size_t x, size_t y) const {
-		assert(x < width);
-		assert(y < height);
-		return gnd[y * width + x];
+		if(x < width && y < height)
+			return gnd[y * width + x];
+		else
+			return GroundKind::none;
 	}
 
 	auto& get(size_t x, size_t y) {
@@ -83,11 +85,14 @@ void Ground::run_water(size_t spring_x) {
 }
 
 void Ground::fill_water(size_t x, size_t y) {
-	auto& tile = get(x, y);
-
-	if(tile == GroundKind::clay || tile == GroundKind::water)
+	std::clog << x << "," << y << std::endl;
+	if(x > width || y > height)
 		return;
 
+	if(get(x, y) != GroundKind::sand)
+		return;
+
+	auto& tile = get(x, y);
 	assert(tile == GroundKind::sand);
 	tile = GroundKind::water;
 
@@ -96,28 +101,29 @@ void Ground::fill_water(size_t x, size_t y) {
 	auto flow_left = [this, x, y]() {fill_water(x - 1, y);};
 	auto flow_right = [this, x, y]() {fill_water(x + 1, y);};
 
-	if(y < height - 1) {
-		const auto below = get(x, y + 1);
-		if(below == GroundKind::clay || below == GroundKind::water) {
-			if(x > 0) {
-				const auto left = get(x - 1, y);
-				if(left == GroundKind::clay && y > 0)
-					flow_up();
-				else
-					flow_left();
-			}
+	const auto below = get(x, y + 1);
 
-			if(x < width - 1) {
-				const auto right = get(x + 1, y);
-				if(right == GroundKind::clay && y > 0)
-					flow_up();
-				else
-					flow_right();
-			}
-		}
-		else {
-			flow_down();
-		}
+	if(below == GroundKind::sand) {
+		flow_down();
+	}
+	else if(below == GroundKind::clay) {
+		const auto left = get(x - 1, y);
+		if(left == GroundKind::clay)
+			flow_up();
+		else
+			flow_left();
+
+		const auto right = get(x + 1, y);
+		flow_right();
+	}
+	else if(below == GroundKind::water) {
+		flow_left();
+
+		const auto right = get(x + 1, y);
+		// if(right == GroundKind::water)
+			// flow_up();
+		// else
+			flow_right();
 	}
 }
 
