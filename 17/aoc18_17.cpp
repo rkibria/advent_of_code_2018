@@ -46,6 +46,10 @@ public:
 
 	void run_water(size_t spring_x);
 
+	auto count_water() const {
+		return std::count(gnd.begin(), gnd.end(), GroundKind::water);
+	}
+
 	friend std::ostream& operator<<(std::ostream& os, const Ground& gnd);
 };
 
@@ -211,7 +215,9 @@ void part_1(const std::vector<Scan>& scans) {
 
 	gnd.run_water(500 - x_range.first);
 
-	std::cout << gnd << std::endl;
+	std::clog << gnd << std::endl;
+
+	std::cout << gnd.count_water() << std::endl;
 }
 
 int main(int argc, char* argv[]) {
