@@ -23,7 +23,7 @@ private:
 	size_t width, height;
 	GroundVector gnd;
 
-	void fill_water(size_t x, size_t y);
+	bool run_water_rcrsv(size_t x, size_t y);
 
 public:
 	Ground(size_t w, size_t h);
@@ -81,50 +81,30 @@ void Ground::set_hzntl_clay(size_t y, size_t start_x, size_t end_x) {
 }
 
 void Ground::run_water(size_t spring_x) {
-	fill_water(spring_x, 0);
+	run_water_rcrsv(spring_x, 0);
 }
 
-void Ground::fill_water(size_t x, size_t y) {
-	std::clog << x << "," << y << std::endl;
-	if(x > width || y > height)
-		return;
+bool Ground::run_water_rcrsv(size_t x, size_t y) {
+	if(x >= width || y >= height)
+		return true;
 
 	if(get(x, y) != GroundKind::sand)
-		return;
+		return false;
 
 	auto& tile = get(x, y);
-	assert(tile == GroundKind::sand);
 	tile = GroundKind::water;
 
-	auto flow_down = [this, x, y]() {fill_water(x, y + 1);};
-	auto flow_up = [this, x, y]() {fill_water(x, y - 1);};
-	auto flow_left = [this, x, y]() {fill_water(x - 1, y);};
-	auto flow_right = [this, x, y]() {fill_water(x + 1, y);};
+	auto flow_down = [this, x, y]() {return run_water_rcrsv(x, y + 1);};
+	auto flow_left = [this, x, y]() {return run_water_rcrsv(x - 1, y);};
+	auto flow_right = [this, x, y]() {return run_water_rcrsv(x + 1, y);};
 
-	const auto below = get(x, y + 1);
-
-	if(below == GroundKind::sand) {
-		flow_down();
+	if(!flow_down()) {
+		const auto l_res = flow_left();
+		const auto r_res = flow_right();
+		return l_res | r_res;
 	}
-	else if(below == GroundKind::clay) {
-		const auto left = get(x - 1, y);
-		if(left == GroundKind::clay)
-			flow_up();
-		else
-			flow_left();
-
-		const auto right = get(x + 1, y);
-		flow_right();
-	}
-	else if(below == GroundKind::water) {
-		flow_left();
-
-		const auto right = get(x + 1, y);
-		// if(right == GroundKind::water)
-			// flow_up();
-		// else
-			flow_right();
-	}
+	else
+		return true;
 }
 
 struct Scan {
