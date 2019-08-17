@@ -94,7 +94,7 @@ void Ground::run_water(size_t spring_x) {
 
 // return true if free flow reached, false if blocked
 bool Ground::run_water_rcrsv(size_t x, size_t y, Direction dir) {
-	std::cout << *this << std::endl;
+	// std::cout << *this << std::endl;
 
 	if(x >= width || y >= height)
 		return true;
@@ -159,14 +159,20 @@ bool Ground::run_water_rcrsv(size_t x, size_t y, Direction dir) {
 		}
 	}
 	else if(dir == Direction::left) {
-		const auto down_free = flow_down();
+		bool down_free = false;
+		if(get(x, y + 1) == GroundKind::sand) {
+			down_free = flow_down();
+		}
 		if(!down_free) {
 			return flow_left();
 		}
 		return down_free;
 	}
 	else if(dir == Direction::right) {
-		const auto down_free = flow_down();
+		bool down_free = false;
+		if(get(x, y + 1) == GroundKind::sand) {
+			down_free = flow_down();
+		}
 		if(!down_free) {
 			return flow_right();
 		}
