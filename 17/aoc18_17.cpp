@@ -15,6 +15,10 @@ enum class GroundKind : GroundType {
 	water = '~',
 };
 
+enum class Direction {
+	down, left, right
+};
+
 using GroundVector = std::vector<GroundKind>;
 
 class Ground
@@ -23,7 +27,7 @@ private:
 	size_t width, height;
 	GroundVector gnd;
 
-	bool run_water_rcrsv(size_t x, size_t y);
+	bool run_water_rcrsv(size_t x, size_t y, Direction dir);
 
 public:
 	Ground(size_t w, size_t h);
@@ -85,30 +89,91 @@ void Ground::set_hzntl_clay(size_t y, size_t start_x, size_t end_x) {
 }
 
 void Ground::run_water(size_t spring_x) {
-	run_water_rcrsv(spring_x, 0);
+	run_water_rcrsv(spring_x, 0, Direction::down);
 }
 
-bool Ground::run_water_rcrsv(size_t x, size_t y) {
+// return true if free flow reached, false if blocked
+bool Ground::run_water_rcrsv(size_t x, size_t y, Direction dir) {
+	std::cout << *this << std::endl;
+
 	if(x >= width || y >= height)
 		return true;
-
-	if(get(x, y) != GroundKind::sand)
-		return false;
 
 	auto& tile = get(x, y);
 	tile = GroundKind::water;
 
-	auto flow_down = [this, x, y]() {return run_water_rcrsv(x, y + 1);};
-	auto flow_left = [this, x, y]() {return run_water_rcrsv(x - 1, y);};
-	auto flow_right = [this, x, y]() {return run_water_rcrsv(x + 1, y);};
+	const auto flow_down = [this, x, y]() {
+		bool down_free;
+		if(y >= height - 1) {
+			down_free = true;
+		}
+		else {
+			if(get(x, y + 1) != GroundKind::clay) {
+				down_free = run_water_rcrsv(x, y + 1, Direction::down);
+			}
+			else {
+				down_free = false;
+			}
+		}
+		return down_free;
+	};
 
-	if(!flow_down()) {
-		const auto l_res = flow_left();
-		const auto r_res = flow_right();
-		return l_res | r_res;
+	const auto flow_left = [this, x, y]() {
+		bool left_free;
+		if(x == 0) {
+			left_free = true;
+		}
+		else {
+			if(get(x - 1, y) != GroundKind::clay) {
+				left_free = run_water_rcrsv(x - 1, y, Direction::left);
+			}
+			else {
+				left_free = false;
+			}
+		}
+		return left_free;
+	};
+
+	const auto flow_right = [this, x, y]() {
+		bool right_free;
+		if(x >= width - 1) {
+			right_free = true;
+		}
+		else {
+			if(get(x + 1, y) != GroundKind::clay) {
+				right_free = run_water_rcrsv(x + 1, y, Direction::right);
+			}
+			else {
+				right_free = false;
+			}
+		}
+		return right_free;
+	};
+
+	if(dir == Direction::down) {
+		bool down_free = flow_down();
+		if(!down_free) {
+			const auto left_free = flow_left();
+			const auto right_free = flow_right();
+			return left_free | right_free;
+		}
 	}
-	else
-		return true;
+	else if(dir == Direction::left) {
+		const auto down_free = flow_down();
+		if(!down_free) {
+			return flow_left();
+		}
+		return down_free;
+	}
+	else if(dir == Direction::right) {
+		const auto down_free = flow_down();
+		if(!down_free) {
+			return flow_right();
+		}
+		return down_free;
+	}
+
+	return true;
 }
 
 struct Scan {
