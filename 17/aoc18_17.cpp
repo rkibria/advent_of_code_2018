@@ -179,7 +179,7 @@ FlowState Ground::run_water_recurse(size_t x, size_t y, Direction dir) {
 			if(flow_down() == FlowState::blocked) {
 				const auto left_flow = flow_left();
 				const auto right_flow = flow_right();
-				flow = ((left_flow == FlowState::free) | (right_flow == FlowState::free))
+				flow = ((left_flow == FlowState::free) || (right_flow == FlowState::free))
 					? FlowState::free : FlowState::blocked;
 			}
 			break;
