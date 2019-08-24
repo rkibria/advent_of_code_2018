@@ -21,8 +21,10 @@ enum class Direction {
 
 using GroundVector = std::vector<GroundKind>;
 
-enum class FlowState {
-	unknown, blocked, free
+enum class FlowState : char {
+	unknown = '.',
+	blocked = '~',
+	free = '|',
 };
 
 using FlowStateVector = std::vector<FlowState>;
@@ -73,6 +75,10 @@ public:
 		return std::count(gnd.begin(), gnd.end(), GroundKind::water);
 	}
 
+	auto count_undrained_water() const {
+		return std::count(flowstates.begin(), flowstates.end(), FlowState::blocked);
+	}
+
 	friend std::ostream& operator<<(std::ostream& os, const Ground& gnd);
 };
 
@@ -81,6 +87,14 @@ std::ostream& operator<<(std::ostream& os, const Ground& gnd) {
 	for(size_t y = 0; y < gnd.height; ++y) {
 		for(size_t x = 0; x < gnd.width; ++x) {
 			os << static_cast<char>(gnd.get(x, y));
+		}
+		os << std::endl;
+	}
+	os << std::endl;
+	for(size_t y = 0; y < gnd.height; ++y) {
+		for(size_t x = 0; x < gnd.width; ++x) {
+			os << (gnd.get(x, y) == GroundKind::clay
+				? static_cast<char>(GroundKind::clay) : static_cast<char>(gnd.get_flowstate(x, y)));
 		}
 		os << std::endl;
 	}
@@ -312,6 +326,7 @@ void part_1(const std::vector<Scan>& scans) {
 	std::clog << gnd << std::endl;
 
 	std::cout << gnd.count_water() << std::endl;
+	std::cout << gnd.count_undrained_water() << std::endl;
 }
 
 int main(int argc, char* argv[]) {
