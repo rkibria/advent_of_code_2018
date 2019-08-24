@@ -296,16 +296,18 @@ void part_1(const std::vector<Scan>& scans) {
 	const auto gnd_height = y_range.second - y_range.first + 1;
 	std::clog << "ground area: " << gnd_width << "x" << gnd_height << std::endl;
 
-	Ground gnd(gnd_width, gnd_height);
+	const size_t x_pad = 2;
+
+	Ground gnd(gnd_width + 2 * x_pad, gnd_height);
 
 	for(const auto& scn : scans) {
 		if(scn.is_hor)
-			gnd.set_hor_clay(scn.coord - y_range.first, scn.start - x_range.first, scn.end - x_range.first);
+			gnd.set_hor_clay(scn.coord - y_range.first, scn.start - x_range.first + x_pad, scn.end - x_range.first + x_pad);
 		else
-			gnd.set_ver_clay(scn.coord - x_range.first, scn.start - y_range.first, scn.end - y_range.first);
+			gnd.set_ver_clay(scn.coord - x_range.first + x_pad, scn.start - y_range.first, scn.end - y_range.first);
 	}
 
-	gnd.run_water(500 - x_range.first);
+	gnd.run_water(500 - x_range.first + x_pad);
 
 	std::clog << gnd << std::endl;
 
