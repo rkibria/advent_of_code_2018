@@ -22,8 +22,10 @@ enum class Direction {
 using GroundVector = std::vector<GroundKind>;
 
 enum class FlowState {
-	blocked, free
+	unknown, blocked, free
 };
+
+using FlowStateVector = std::vector<FlowState>;
 
 class Ground
 {
@@ -31,6 +33,7 @@ private:
 	size_t width, height;
 	GroundVector gnd;
 
+	FlowStateVector flowstates;
 	FlowState run_water_recurse(size_t x, size_t y, Direction dir);
 
 public:
@@ -41,6 +44,18 @@ public:
 			return gnd[y * width + x];
 		else
 			return GroundKind::none;
+	}
+
+	auto get_flowstate(size_t x, size_t y) const {
+		assert(x < width);
+		assert(y < height);
+		return flowstates[y * width + x];
+	}
+
+	auto& get_flowstate(size_t x, size_t y) {
+		assert(x < width);
+		assert(y < height);
+		return flowstates[y * width + x];
 	}
 
 	auto& get(size_t x, size_t y) {
@@ -76,7 +91,8 @@ std::ostream& operator<<(std::ostream& os, const Ground& gnd) {
 Ground::Ground(size_t w, size_t h)
 	: width(w),
 	height(h),
-	gnd(w * h, GroundKind::sand) {
+	gnd(w * h, GroundKind::sand),
+	flowstates(w * h, FlowState::unknown) {
 	assert(w > 0 && h > 0);
 }
 
@@ -102,8 +118,12 @@ FlowState Ground::run_water_recurse(size_t x, size_t y, Direction dir) {
 	if(x >= width || y >= height)
 		return FlowState::free;
 
-	auto& tile = get(x, y);
-	tile = GroundKind::water;
+	const auto flow = get_flowstate(x, y);
+	if(flow != FlowState::unknown) {
+		return flow;
+	}
+
+	get(x, y) = GroundKind::water;
 
 	const auto flow_down = [this, x, y]() {
 		FlowState flow;
@@ -118,6 +138,7 @@ FlowState Ground::run_water_recurse(size_t x, size_t y, Direction dir) {
 				flow = FlowState::blocked;
 			}
 		}
+		get_flowstate(x, y) = flow;
 		return flow;
 	};
 
@@ -134,6 +155,7 @@ FlowState Ground::run_water_recurse(size_t x, size_t y, Direction dir) {
 				flow = FlowState::blocked;
 			}
 		}
+		get_flowstate(x, y) = flow;
 		return flow;
 	};
 
@@ -150,6 +172,7 @@ FlowState Ground::run_water_recurse(size_t x, size_t y, Direction dir) {
 				flow = FlowState::blocked;
 			}
 		}
+		get_flowstate(x, y) = flow;
 		return flow;
 	};
 
