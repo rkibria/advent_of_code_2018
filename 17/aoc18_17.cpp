@@ -21,13 +21,17 @@ enum class Direction {
 
 using GroundVector = std::vector<GroundKind>;
 
+enum class FlowState {
+	blocked, free
+};
+
 class Ground
 {
 private:
 	size_t width, height;
 	GroundVector gnd;
 
-	bool run_water_rcrsv(size_t x, size_t y, Direction dir);
+	FlowState run_water_recurse(size_t x, size_t y, Direction dir);
 
 public:
 	Ground(size_t w, size_t h);
@@ -45,8 +49,8 @@ public:
 		return gnd[y * width + x];
 	}
 
-	void set_vrtcl_clay(size_t x, size_t start_y, size_t end_y);
-	void set_hzntl_clay(size_t y, size_t start_x, size_t end_x);
+	void set_ver_clay(size_t x, size_t start_y, size_t end_y);
+	void set_hor_clay(size_t y, size_t start_x, size_t end_x);
 
 	void run_water(size_t spring_x);
 
@@ -76,108 +80,110 @@ Ground::Ground(size_t w, size_t h)
 	assert(w > 0 && h > 0);
 }
 
-void Ground::set_vrtcl_clay(size_t x, size_t start_y, size_t end_y) {
+void Ground::set_ver_clay(size_t x, size_t start_y, size_t end_y) {
 	assert(start_y < end_y);
 	for(auto y = start_y; y <= end_y; ++y)
 		get(x, y) = GroundKind::clay;
 }
 
-void Ground::set_hzntl_clay(size_t y, size_t start_x, size_t end_x) {
+void Ground::set_hor_clay(size_t y, size_t start_x, size_t end_x) {
 	assert(start_x < end_x);
 	for(auto x = start_x; x <= end_x; ++x)
 		get(x, y) = GroundKind::clay;
 }
 
 void Ground::run_water(size_t spring_x) {
-	run_water_rcrsv(spring_x, 0, Direction::down);
+	run_water_recurse(spring_x, 0, Direction::down);
 }
 
-// return true if free flow reached, false if blocked
-bool Ground::run_water_rcrsv(size_t x, size_t y, Direction dir) {
-	std::cout << *this << std::endl;
+FlowState Ground::run_water_recurse(size_t x, size_t y, Direction dir) {
+	// std::cout << *this << std::endl;
 
 	if(x >= width || y >= height)
-		return true;
+		return FlowState::free;
 
 	auto& tile = get(x, y);
 	tile = GroundKind::water;
 
 	const auto flow_down = [this, x, y]() {
-		bool down_free;
+		FlowState flow;
 		if(y >= height - 1) {
-			down_free = true;
+			flow = FlowState::free;
 		}
 		else {
 			if(get(x, y + 1) != GroundKind::clay) {
-				down_free = run_water_rcrsv(x, y + 1, Direction::down);
+				flow = run_water_recurse(x, y + 1, Direction::down);
 			}
 			else {
-				down_free = false;
+				flow = FlowState::blocked;
 			}
 		}
-		return down_free;
+		return flow;
 	};
 
 	const auto flow_left = [this, x, y]() {
-		bool left_free;
+		FlowState flow;
 		if(x == 0) {
-			left_free = true;
+			flow = FlowState::free;
 		}
 		else {
 			if(get(x - 1, y) != GroundKind::clay) {
-				left_free = run_water_rcrsv(x - 1, y, Direction::left);
+				flow = run_water_recurse(x - 1, y, Direction::left);
 			}
 			else {
-				left_free = false;
+				flow = FlowState::blocked;
 			}
 		}
-		return left_free;
+		return flow;
 	};
 
 	const auto flow_right = [this, x, y]() {
-		bool right_free;
+		FlowState flow;
 		if(x >= width - 1) {
-			right_free = true;
+			flow = FlowState::free;
 		}
 		else {
 			if(get(x + 1, y) != GroundKind::clay) {
-				right_free = run_water_rcrsv(x + 1, y, Direction::right);
+				flow = run_water_recurse(x + 1, y, Direction::right);
 			}
 			else {
-				right_free = false;
+				flow = FlowState::blocked;
 			}
 		}
-		return right_free;
+		return flow;
 	};
 
-	if(dir == Direction::down) {
-		bool down_free = flow_down();
-		if(!down_free) {
-			const auto left_free = flow_left();
-			const auto right_free = flow_right();
-			return left_free | right_free;
-		}
-	}
-	else if(dir == Direction::left) {
-		const auto down_free = flow_down();
-		if(!down_free) {
-			return flow_left();
-		}
-		return down_free;
-	}
-	else if(dir == Direction::right) {
-		const auto down_free = flow_down();
-		if(!down_free) {
-			return flow_right();
-		}
-		return down_free;
+	switch(dir) {
+		case Direction::down:
+			if(flow_down() == FlowState::blocked) {
+				const auto left_flow = flow_left();
+				const auto right_flow = flow_right();
+				return ((left_flow == FlowState::free) | (right_flow == FlowState::free))
+					? FlowState::free : FlowState::blocked;
+			}
+			break;
+
+		case Direction::left:
+			if(flow_down() == FlowState::blocked) {
+				return flow_left();
+			}
+			break;
+
+		case Direction::right:
+			if(flow_down() == FlowState::blocked) {
+				return flow_right();
+			}
+			break;
+
+		default:
+			break;
 	}
 
-	return true;
+	return FlowState::free;
 }
 
 struct Scan {
-	bool is_hzntl;
+	bool is_hor;
 	size_t coord;
 	size_t start;
 	size_t end;
@@ -202,7 +208,7 @@ auto load(const char* filename) {
 			iss >> token;
 			token.pop_back();
 
-			scn.is_hzntl = (token[0] == 'y');
+			scn.is_hor = (token[0] == 'y');
 
 			token = token.substr(2);
 			scn.coord = stoi(token);
@@ -221,10 +227,10 @@ auto load(const char* filename) {
 }
 
 void part_1(const std::vector<Scan>& scans) {
-	auto scans_which_are_hzntl = [&scans](bool is_hzntl) {
+	auto get_scans = [&scans](bool is_hor) {
 		std::vector<Scan> out_vec(scans.size());
 		auto it = std::copy_if(scans.begin(), scans.end(), out_vec.begin(),
-			[is_hzntl](const Scan& scn) {return scn.is_hzntl == is_hzntl;});
+			[is_hor](const Scan& scn) {return scn.is_hor == is_hor;});
 		out_vec.resize(std::distance(out_vec.begin(), it));
 		return out_vec;
 	};
@@ -249,19 +255,19 @@ void part_1(const std::vector<Scan>& scans) {
 			[](const Scan& a, const Scan& b) {return a.end < b.end;})).end;
 	};
 
-	auto hzntl_scans = scans_which_are_hzntl(true);
-	auto vrtcl_scans = scans_which_are_hzntl(false);
+	auto hor_scans = get_scans(true);
+	auto ver_scans = get_scans(false);
 
-	const std::pair<size_t, size_t> hzntl_x_range{minimum_start(hzntl_scans), maximum_end(hzntl_scans)};
-	const std::pair<size_t, size_t> hzntl_y_range{minimum_coord(hzntl_scans), maximum_coord(hzntl_scans)};
+	const std::pair<size_t, size_t> hor_x_range{minimum_start(hor_scans), maximum_end(hor_scans)};
+	const std::pair<size_t, size_t> hor_y_range{minimum_coord(hor_scans), maximum_coord(hor_scans)};
 
-	const std::pair<size_t, size_t> vrtcl_x_range{minimum_coord(vrtcl_scans), maximum_coord(vrtcl_scans)};
-	const std::pair<size_t, size_t> vrtcl_y_range{minimum_start(vrtcl_scans), maximum_end(vrtcl_scans)};
+	const std::pair<size_t, size_t> ver_x_range{minimum_coord(ver_scans), maximum_coord(ver_scans)};
+	const std::pair<size_t, size_t> ver_y_range{minimum_start(ver_scans), maximum_end(ver_scans)};
 
-	const std::pair<size_t, size_t> x_range{std::min(hzntl_x_range.first, vrtcl_x_range.first),
-		std::max(hzntl_x_range.second, vrtcl_x_range.second)};
-	const std::pair<size_t, size_t> y_range{std::min(hzntl_y_range.first, vrtcl_y_range.first),
-		std::max(hzntl_y_range.second, vrtcl_y_range.second)};
+	const std::pair<size_t, size_t> x_range{std::min(hor_x_range.first, ver_x_range.first),
+		std::max(hor_x_range.second, ver_x_range.second)};
+	const std::pair<size_t, size_t> y_range{std::min(hor_y_range.first, ver_y_range.first),
+		std::max(hor_y_range.second, ver_y_range.second)};
 	std::clog << "x range: " << x_range.first << " -> " << x_range.second << std::endl;
 	std::clog << "y range: " << y_range.first << " -> " << y_range.second << std::endl;
 
@@ -272,10 +278,10 @@ void part_1(const std::vector<Scan>& scans) {
 	Ground gnd(gnd_width, gnd_height);
 
 	for(const auto& scn : scans) {
-		if(scn.is_hzntl)
-			gnd.set_hzntl_clay(scn.coord - y_range.first, scn.start - x_range.first, scn.end - x_range.first);
+		if(scn.is_hor)
+			gnd.set_hor_clay(scn.coord - y_range.first, scn.start - x_range.first, scn.end - x_range.first);
 		else
-			gnd.set_vrtcl_clay(scn.coord - x_range.first, scn.start - y_range.first, scn.end - y_range.first);
+			gnd.set_ver_clay(scn.coord - x_range.first, scn.start - y_range.first, scn.end - y_range.first);
 	}
 
 	gnd.run_water(500 - x_range.first);
