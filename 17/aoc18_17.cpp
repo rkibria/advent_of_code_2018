@@ -118,9 +118,9 @@ FlowState Ground::run_water_recurse(size_t x, size_t y, Direction dir) {
 	if(x >= width || y >= height)
 		return FlowState::free;
 
-	const auto flow = get_flowstate(x, y);
-	if(flow != FlowState::unknown) {
-		return flow;
+	const auto cached_flow = get_flowstate(x, y);
+	if(cached_flow != FlowState::unknown) {
+		return cached_flow;
 	}
 
 	get(x, y) = GroundKind::water;
@@ -138,7 +138,6 @@ FlowState Ground::run_water_recurse(size_t x, size_t y, Direction dir) {
 				flow = FlowState::blocked;
 			}
 		}
-		get_flowstate(x, y) = flow;
 		return flow;
 	};
 
@@ -155,7 +154,6 @@ FlowState Ground::run_water_recurse(size_t x, size_t y, Direction dir) {
 				flow = FlowState::blocked;
 			}
 		}
-		get_flowstate(x, y) = flow;
 		return flow;
 	};
 
@@ -172,37 +170,37 @@ FlowState Ground::run_water_recurse(size_t x, size_t y, Direction dir) {
 				flow = FlowState::blocked;
 			}
 		}
-		get_flowstate(x, y) = flow;
 		return flow;
 	};
 
+	FlowState flow = FlowState::free;
 	switch(dir) {
 		case Direction::down:
 			if(flow_down() == FlowState::blocked) {
 				const auto left_flow = flow_left();
 				const auto right_flow = flow_right();
-				return ((left_flow == FlowState::free) | (right_flow == FlowState::free))
+				flow = ((left_flow == FlowState::free) | (right_flow == FlowState::free))
 					? FlowState::free : FlowState::blocked;
 			}
 			break;
 
 		case Direction::left:
 			if(flow_down() == FlowState::blocked) {
-				return flow_left();
+				flow = flow_left();
 			}
 			break;
 
 		case Direction::right:
 			if(flow_down() == FlowState::blocked) {
-				return flow_right();
+				flow = flow_right();
 			}
 			break;
 
 		default:
 			break;
 	}
-
-	return FlowState::free;
+	get_flowstate(x, y) = flow;
+	return flow;
 }
 
 struct Scan {
