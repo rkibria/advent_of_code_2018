@@ -108,8 +108,28 @@ bool Ground::run_water_recurse(size_t x, size_t y) {
 
 	to_fill.push_back(Pos{x, y});
 
-	bool flow = true;
+	const auto flow_sideways = [this, &to_fill](auto x, auto y, auto go_left) {
+		bool flow;
+		while(x > 0) {
+			go_left ? --x : ++x;
+			if(get(x, y) != GroundKind::clay) {
+				to_fill.push_back(Pos{x, y});
+				if(y < height - 1 && get(x, y + 1) != GroundKind::clay) {
+					flow = run_water_recurse(x, y + 1);
+				}
+				if(flow) {
+					break;
+				}
+			}
+			else {
+				flow = false;
+				break;
+			}
+		}
+		return flow;
+	};
 
+	bool flow = true;
 	if(y < height - 1) {
 		if(get(x, y + 1) != GroundKind::clay) {
 			flow = run_water_recurse(x, y + 1);
@@ -120,43 +140,8 @@ bool Ground::run_water_recurse(size_t x, size_t y) {
 
 		if(!flow) {
 			if(x > 0) {
-				auto lx = x;
-				bool left_flow, right_flow;
-				while(lx > 0) {
-					--lx;
-					if(get(lx, y) != GroundKind::clay) {
-						to_fill.push_back(Pos{lx, y});
-						if(y < height - 1 && get(lx, y + 1) != GroundKind::clay) {
-							left_flow = run_water_recurse(lx, y + 1);
-						}
-						if(left_flow) {
-							break;
-						}
-					}
-					else {
-						left_flow = false;
-						break;
-					}
-				}
-
-				lx = x;
-				while(lx < width - 1) {
-					++lx;
-					if(get(lx, y) != GroundKind::clay) {
-						to_fill.push_back(Pos{lx, y});
-						if(y < height - 1 && get(lx, y + 1) != GroundKind::clay) {
-							right_flow = run_water_recurse(lx, y + 1);
-						}
-						if(right_flow) {
-							break;
-						}
-					}
-					else {
-						right_flow = false;
-						break;
-					}
-				}
-
+				const auto left_flow = flow_sideways(x, y, true);
+				const auto right_flow = flow_sideways(x, y, false);
 				flow = left_flow || right_flow;
 			}
 		}
