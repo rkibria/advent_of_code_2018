@@ -94,8 +94,11 @@ void Ground::run_water(size_t spring_x) {
 	run_water_recurse(spring_x, 0);
 }
 
+static unsigned int recursive_call_count = 0;
+
 bool Ground::run_water_recurse(size_t x, size_t y) {
 	// std::cout << *this << std::endl;
+	++recursive_call_count;
 
 	if(x >= width || y >= height)
 		return true;
@@ -288,4 +291,6 @@ int main(int argc, char* argv[]) {
 	std::clog << "scans: " << scans.size() << std::endl;
 
 	part_1(scans);
+
+	std::clog << "recursive call count: " << recursive_call_count << std::endl;
 }
