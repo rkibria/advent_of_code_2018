@@ -12,7 +12,8 @@ enum class GroundKind : GroundType {
 	none = ' ',
 	sand = '.',
 	clay = '#',
-	water = '~',
+	flowing_water = '|',
+	stagnant_water = '~',
 };
 
 using GroundVector = std::vector<GroundKind>;
@@ -47,11 +48,12 @@ public:
 	void run_water(size_t spring_x);
 
 	auto count_water() const {
-		return std::count(gnd.begin(), gnd.end(), GroundKind::water);
+		return std::count(gnd.begin(), gnd.end(), GroundKind::stagnant_water)
+			+ std::count(gnd.begin(), gnd.end(), GroundKind::flowing_water);
 	}
 
-	auto count_undrained_water() const {
-		return 0;
+	auto count_stagnant_water() const {
+		return std::count(gnd.begin(), gnd.end(), GroundKind::stagnant_water);
 	}
 
 	friend std::ostream& operator<<(std::ostream& os, const Ground& gnd);
@@ -98,61 +100,67 @@ bool Ground::run_water_recurse(size_t x, size_t y) {
 	if(x >= width || y >= height)
 		return true;
 
-	get(x, y) = GroundKind::water;
+	using Pos = std::pair<size_t, size_t>;
+	std::vector<Pos> to_fill;
 
-	if(y >= height - 1)
-		return true;
+	to_fill.push_back(Pos{x, y});
 
 	bool flow = true;
 
-	if(get(x, y + 1) != GroundKind::clay) {
-		flow = run_water_recurse(x, y + 1);
-	}
-	else {
-		flow = false;
-	}
-
-	if(!flow) {
-		if(x > 0) {
-			auto lx = x;
-			bool left_flow, right_flow;
-			while(lx > 0) {
-				--lx;
-				if(get(lx, y) != GroundKind::clay) {
-					get(lx, y) = GroundKind::water;
-					if(y < height - 1 && get(lx, y + 1) != GroundKind::clay) {
-						left_flow = run_water_recurse(lx, y + 1);
-					}
-					if(left_flow) {
-						break;
-					}
-				}
-				else {
-					left_flow = false;
-					break;
-				}
-			}
-
-			lx = x;
-			while(lx < width - 1) {
-				++lx;
-				if(get(lx, y) != GroundKind::clay) {
-					get(lx, y) = GroundKind::water;
-					if(y < height - 1 && get(lx, y + 1) != GroundKind::clay) {
-						right_flow = run_water_recurse(lx, y + 1);
-					}
-					if(right_flow) {
-						break;
-					}
-				}
-				else {
-					right_flow = false;
-					break;
-				}
-			}
-
-			flow = left_flow || right_flow;
+	if(y < height - 1) {
+		if(get(x, y + 1) != GroundKind::clay) {
+			flow = run_water_recurse(x, y + 1);
 		}
+		else {
+			flow = false;
+		}
+
+		if(!flow) {
+			if(x > 0) {
+				auto lx = x;
+				bool left_flow, right_flow;
+				while(lx > 0) {
+					--lx;
+					if(get(lx, y) != GroundKind::clay) {
+						to_fill.push_back(Pos{lx, y});
+						if(y < height - 1 && get(lx, y + 1) != GroundKind::clay) {
+							left_flow = run_water_recurse(lx, y + 1);
+						}
+						if(left_flow) {
+							break;
+						}
+					}
+					else {
+						left_flow = false;
+						break;
+					}
+				}
+
+				lx = x;
+				while(lx < width - 1) {
+					++lx;
+					if(get(lx, y) != GroundKind::clay) {
+						to_fill.push_back(Pos{lx, y});
+						if(y < height - 1 && get(lx, y + 1) != GroundKind::clay) {
+							right_flow = run_water_recurse(lx, y + 1);
+						}
+						if(right_flow) {
+							break;
+						}
+					}
+					else {
+						right_flow = false;
+						break;
+					}
+				}
+
+				flow = left_flow || right_flow;
+			}
+		}
+	}
+
+	for(const auto& pos : to_fill) {
+		get(pos.first, pos.second) = flow ? GroundKind::flowing_water : GroundKind::stagnant_water;
 	}
 
 	return flow;
@@ -267,7 +275,7 @@ void part_1(const std::vector<Scan>& scans) {
 	std::clog << gnd << std::endl;
 
 	std::cout << gnd.count_water() << std::endl;
-	std::cout << gnd.count_undrained_water() << std::endl;
+	std::cout << gnd.count_stagnant_water() << std::endl;
 }
 
 int main(int argc, char* argv[]) {
