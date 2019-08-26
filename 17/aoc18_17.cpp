@@ -15,19 +15,7 @@ enum class GroundKind : GroundType {
 	water = '~',
 };
 
-enum class Direction {
-	down, left, right
-};
-
 using GroundVector = std::vector<GroundKind>;
-
-enum class FlowState : char {
-	unknown = '.',
-	blocked = '~',
-	free = '|',
-};
-
-using FlowStateVector = std::vector<FlowState>;
 
 class Ground
 {
@@ -35,8 +23,7 @@ private:
 	size_t width, height;
 	GroundVector gnd;
 
-	FlowStateVector flowstates;
-	FlowState run_water_recurse(size_t x, size_t y, Direction dir);
+	bool run_water_recurse(size_t x, size_t y);
 
 public:
 	Ground(size_t w, size_t h);
@@ -46,18 +33,6 @@ public:
 			return gnd[y * width + x];
 		else
 			return GroundKind::none;
-	}
-
-	auto get_flowstate(size_t x, size_t y) const {
-		assert(x < width);
-		assert(y < height);
-		return flowstates[y * width + x];
-	}
-
-	auto& get_flowstate(size_t x, size_t y) {
-		assert(x < width);
-		assert(y < height);
-		return flowstates[y * width + x];
 	}
 
 	auto& get(size_t x, size_t y) {
@@ -76,7 +51,7 @@ public:
 	}
 
 	auto count_undrained_water() const {
-		return std::count(flowstates.begin(), flowstates.end(), FlowState::blocked);
+		return 0;
 	}
 
 	friend std::ostream& operator<<(std::ostream& os, const Ground& gnd);
@@ -90,14 +65,6 @@ std::ostream& operator<<(std::ostream& os, const Ground& gnd) {
 		}
 		os << std::endl;
 	}
-	os << std::endl;
-	for(size_t y = 0; y < gnd.height; ++y) {
-		for(size_t x = 0; x < gnd.width; ++x) {
-			os << (gnd.get(x, y) == GroundKind::clay
-				? static_cast<char>(GroundKind::clay) : static_cast<char>(gnd.get_flowstate(x, y)));
-		}
-		os << std::endl;
-	}
 
 	return os;
 }
@@ -105,8 +72,7 @@ std::ostream& operator<<(std::ostream& os, const Ground& gnd) {
 Ground::Ground(size_t w, size_t h)
 	: width(w),
 	height(h),
-	gnd(w * h, GroundKind::sand),
-	flowstates(w * h, FlowState::unknown) {
+	gnd(w * h, GroundKind::sand) {
 	assert(w > 0 && h > 0);
 }
 
@@ -123,97 +89,72 @@ void Ground::set_hor_clay(size_t y, size_t start_x, size_t end_x) {
 }
 
 void Ground::run_water(size_t spring_x) {
-	run_water_recurse(spring_x, 0, Direction::down);
+	run_water_recurse(spring_x, 0);
 }
 
-FlowState Ground::run_water_recurse(size_t x, size_t y, Direction dir) {
+bool Ground::run_water_recurse(size_t x, size_t y) {
 	// std::cout << *this << std::endl;
 
 	if(x >= width || y >= height)
-		return FlowState::free;
-
-	const auto cached_flow = get_flowstate(x, y);
-	if(cached_flow != FlowState::unknown) {
-		return cached_flow;
-	}
+		return true;
 
 	get(x, y) = GroundKind::water;
 
-	const auto flow_down = [this, x, y]() {
-		FlowState flow;
-		if(y >= height - 1) {
-			flow = FlowState::free;
-		}
-		else {
-			if(get(x, y + 1) != GroundKind::clay) {
-				flow = run_water_recurse(x, y + 1, Direction::down);
-			}
-			else {
-				flow = FlowState::blocked;
-			}
-		}
-		return flow;
-	};
+	if(y >= height - 1)
+		return true;
 
-	const auto flow_left = [this, x, y]() {
-		FlowState flow;
-		if(x == 0) {
-			flow = FlowState::free;
-		}
-		else {
-			if(get(x - 1, y) != GroundKind::clay) {
-				flow = run_water_recurse(x - 1, y, Direction::left);
-			}
-			else {
-				flow = FlowState::blocked;
-			}
-		}
-		return flow;
-	};
+	bool flow = true;
 
-	const auto flow_right = [this, x, y]() {
-		FlowState flow;
-		if(x >= width - 1) {
-			flow = FlowState::free;
-		}
-		else {
-			if(get(x + 1, y) != GroundKind::clay) {
-				flow = run_water_recurse(x + 1, y, Direction::right);
-			}
-			else {
-				flow = FlowState::blocked;
-			}
-		}
-		return flow;
-	};
-
-	FlowState flow = FlowState::free;
-	switch(dir) {
-		case Direction::down:
-			if(flow_down() == FlowState::blocked) {
-				const auto left_flow = flow_left();
-				const auto right_flow = flow_right();
-				flow = ((left_flow == FlowState::free) || (right_flow == FlowState::free))
-					? FlowState::free : FlowState::blocked;
-			}
-			get_flowstate(x, y) = flow;
-			break;
-
-		case Direction::left:
-			if(flow_down() == FlowState::blocked) {
-				flow = flow_left();
-			}
-			break;
-
-		case Direction::right:
-			if(flow_down() == FlowState::blocked) {
-				flow = flow_right();
-			}
-			break;
-
-		default:
-			break;
+	if(get(x, y + 1) != GroundKind::clay) {
+		flow = run_water_recurse(x, y + 1);
 	}
+	else {
+		flow = false;
+	}
+
+	if(!flow) {
+		if(x > 0) {
+			auto lx = x;
+			bool left_flow, right_flow;
+			while(lx > 0) {
+				--lx;
+				if(get(lx, y) != GroundKind::clay) {
+					get(lx, y) = GroundKind::water;
+					if(y < height - 1 && get(lx, y + 1) != GroundKind::clay) {
+						left_flow = run_water_recurse(lx, y + 1);
+					}
+					if(left_flow) {
+						break;
+					}
+				}
+				else {
+					left_flow = false;
+					break;
+				}
+			}
+
+			lx = x;
+			while(lx < width - 1) {
+				++lx;
+				if(get(lx, y) != GroundKind::clay) {
+					get(lx, y) = GroundKind::water;
+					if(y < height - 1 && get(lx, y + 1) != GroundKind::clay) {
+						right_flow = run_water_recurse(lx, y + 1);
+					}
+					if(right_flow) {
+						break;
+					}
+				}
+				else {
+					right_flow = false;
+					break;
+				}
+			}
+
+			flow = left_flow || right_flow;
+		}
+	}
+
 	return flow;
 }
 
