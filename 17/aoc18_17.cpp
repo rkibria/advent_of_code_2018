@@ -94,11 +94,12 @@ void Ground::run_water(size_t spring_x) {
 	run_water_recurse(spring_x, 0);
 }
 
-static unsigned int recursive_call_count = 0;
+static size_t recursive_call_count = 0;
 
 bool Ground::run_water_recurse(size_t x, size_t y) {
 	// std::cout << *this << std::endl;
 	++recursive_call_count;
+	if(recursive_call_count % 1000000 == 0) std::clog << recursive_call_count << std::endl; // took about 1 billion calls
 
 	if(x >= width || y >= height)
 		return true;
@@ -109,12 +110,13 @@ bool Ground::run_water_recurse(size_t x, size_t y) {
 	to_fill.push_back(Pos{x, y});
 
 	const auto flow_sideways = [this, &to_fill](auto x, auto y, auto go_left) {
-		bool flow;
+		bool flow = false;
 		while(x > 0) {
 			go_left ? --x : ++x;
 			if(get(x, y) != GroundKind::clay) {
 				to_fill.push_back(Pos{x, y});
-				if(y < height - 1 && get(x, y + 1) != GroundKind::clay) {
+				const auto tile_below = get(x, y + 1);
+				if(y < height - 1 && tile_below != GroundKind::clay && tile_below != GroundKind::stagnant_water) {
 					flow = run_water_recurse(x, y + 1);
 				}
 				if(flow) {
@@ -131,7 +133,8 @@ bool Ground::run_water_recurse(size_t x, size_t y) {
 
 	bool flow = true;
 	if(y < height - 1) {
-		if(get(x, y + 1) != GroundKind::clay) {
+		const auto tile_below = get(x, y + 1);
+		if(tile_below != GroundKind::clay && tile_below != GroundKind::stagnant_water) {
 			flow = run_water_recurse(x, y + 1);
 		}
 		else {
@@ -198,7 +201,7 @@ auto load(const char* filename) {
 	return scans;
 }
 
-void part_1(const std::vector<Scan>& scans) {
+void solve(const std::vector<Scan>& scans) {
 	auto get_scans = [&scans](bool is_hor) {
 		std::vector<Scan> out_vec(scans.size());
 		auto it = std::copy_if(scans.begin(), scans.end(), out_vec.begin(),
@@ -275,7 +278,7 @@ int main(int argc, char* argv[]) {
 	auto scans = load(argv[1]);
 	std::clog << "scans: " << scans.size() << std::endl;
 
-	part_1(scans);
+	solve(scans);
 
 	std::clog << "recursive call count: " << recursive_call_count << std::endl;
 }
